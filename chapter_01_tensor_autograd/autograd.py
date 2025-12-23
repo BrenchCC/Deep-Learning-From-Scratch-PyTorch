@@ -194,8 +194,7 @@ class ComplexMatrixGraph:
         logger.info(f"[Matrix Graph] Grad b Match: {b_match}")
         
         # 简单的维度检查打印，帮助理解 VJP
-        if not W_match:
-            logger.error(f"Shape Mismatch Debug: W.grad {self.W.grad.shape} vs Manual {grad_W_man.shape}")
+        logger.info(f"Shape Mismatch Debug: W.grad {self.W.grad.shape} vs Manual {grad_W_man.shape}")
 
 
 def main():
