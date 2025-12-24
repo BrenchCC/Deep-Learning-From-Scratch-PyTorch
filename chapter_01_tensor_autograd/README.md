@@ -104,9 +104,226 @@ $$\nabla_{\mathbf{x}} L = (\frac{\partial \mathbf{y}}{\partial \mathbf{x}})^T \c
 
 当我们调用 `loss.backward()` 时，引擎从根节点出发，沿着 `grad_fn` 链条调用每个 Function 的 `backward` 方法，累加梯度到 `.grad` 属性中。
 
-## 6. Code Example 浅析
+
+## 6. 推导例子
+### 6.1 网络和 loss 
+
+#### 前向定义（单样本，标量 loss）
+
+输入：  
+\( x \in \mathbb{R}^2,\quad y \in \mathbb{R} \)
+
+参数：  
+- \( W_1 \in \mathbb{R}^{2\times2},\ b_1 \in \mathbb{R}^2 \)  
+- \( W_2 \in \mathbb{R}^{2\times2},\ b_2 \in \mathbb{R}^2 \)  
+- \( W_3 \in \mathbb{R}^{1\times2},\ b_3 \in \mathbb{R} \)
+
+---
+
+#### Forward（定义计算图）
+
+\[
+\begin{aligned}
+h_1 &= W_1 x + b_1 \\
+h_2 &= \text{ReLU}(h_1) \\
+h_3 &= W_2 h_2 + b_2 \\
+\hat y &= W_3 h_3 + b_3 \\
+L &= (\hat y - y)^2
+\end{aligned}
+\]
+
+**到这里为止，只是在定义函数 \( L(\theta) \)**  
+还没有任何“训练”发生。
+
+---
+
+### 6.2 反向传播总纲
+
+我们要算的是：
+
+\[
+\boxed{
+\nabla_\theta L
+}
+\]
+
+也就是对所有参数的偏导。
+
+反向传播本质是 **链式法则的系统化执行**：
+
+\[
+\frac{\partial L}{\partial \theta}=
+\frac{\partial L}{\partial \hat y}
+\cdot
+\frac{\partial \hat y}{\partial h_3}
+\cdot
+\frac{\partial h_3}{\partial h_2}
+\cdot
+\frac{\partial h_2}{\partial h_1}
+\cdot
+\frac{\partial h_1}{\partial \theta}
+\]
+
+---
+
+### 6.3 真正开始 backward（一步一步）
+
+- #### Step 0：反向传播起点
+
+因为：
+
+\[
+L = (\hat y - y)^2
+\]
+
+所以：
+
+\[
+\boxed{
+\frac{\partial L}{\partial \hat y}=
+2(\hat y - y)
+}
+\]
+
+这就是 **loss.backward() 的初始梯度**。
+
+---
+
+#### Step 1：第四层 Linear（\( \hat y = W_3 h_3 + b_3 \)）
+
+###### 梯度对参数
+
+\[
+\boxed{
+\frac{\partial L}{\partial W_3}=
+\frac{\partial L}{\partial \hat y}
+\cdot
+h_3^\top
+}
+\]
+
+\[
+\boxed{
+\frac{\partial L}{\partial b_3}=
+\frac{\partial L}{\partial \hat y}
+}
+\]
+
+##### 梯度向前传（给下一层）
+
+\[
+\boxed{
+\frac{\partial L}{\partial h_3}=
+W_3^\top
+\frac{\partial L}{\partial \hat y}
+}
+\]
+
+这一步就是 **VJP（向量 × Jacobian）**。
+
+---
+
+#### Step 2：第三层 Linear（\( h_3 = W_2 h_2 + b_2 \)）
+
+##### 参数梯度
+
+\[
+\boxed{
+\frac{\partial L}{\partial W_2}=
+\frac{\partial L}{\partial h_3}
+\cdot
+h_2^\top
+}
+\]
+
+\[
+\boxed{
+\frac{\partial L}{\partial b_2}=
+\frac{\partial L}{\partial h_3}
+}
+\]
+
+##### 继续往前传
+
+\[
+\boxed{
+\frac{\partial L}{\partial h_2}=
+W_2^\top
+\frac{\partial L}{\partial h_3}
+}
+\]
+
+---
+
+#### Step 3：ReLU（这是第一个“非线性关卡”）
+
+\[
+h_2 = \text{ReLU}(h_1)
+\]
+
+ReLU 的导数是：
+
+\[
+\frac{\partial h_2}{\partial h_1}=
+\mathbb{1}(h_1 > 0)
+\]
+
+所以：
+
+\[
+\boxed{
+\frac{\partial L}{\partial h_1}=
+\frac{\partial L}{\partial h_2}
+\odot
+\mathbb{1}(h_1 > 0)
+}
+\]
+
+这一步就是为什么 **ReLU 会“截断梯度”**。
+
+---
+
+#### Step 4：第一层 Linear（\( h_1 = W_1 x + b_1 \)）
+
+##### 参数梯度
+
+\[
+\boxed{
+\frac{\partial L}{\partial W_1}=
+\frac{\partial L}{\partial h_1}
+\cdot
+x^\top
+}
+\]
+
+\[
+\boxed{
+\frac{\partial L}{\partial b_1}=
+\frac{\partial L}{\partial h_1}
+}
+\]
+
+到此为止，**所有参数梯度都算完了**。
+
+---
+
+#@ 四、完整反向流程总结
+
+> **反向传播不是在“算 loss”，  
+> 而是在把 loss 的导数，一层一层传回去，  
+> 并在每一层顺手把参数的梯度记下来。**
+
+顺序永远是：
+
+```text
+loss → 输出层 → 中间层 → 输入层
+```
+
+
+## 7. Code Example 浅析
 > 本章代码将不依赖神经网络层（`nn.Linear`），而是直接操作 `Tensor` 来构建计算图，并手动实现 **Vector-Jacobian Product (VJP)**，以此来验证 PyTorch 自动微分的正确性。
 **[Code](autograd.py) 说明**:
 1.  **Simple Example**: 对应理论部分的 $z = xy + \sin(x)$，验证标量链式法则。
 2.  **Complex Example**: 对应理论部分的 Linear Layer ($Y=XW+b$)，验证矩阵 VJP。
 3.  **Core Logic**: 通过 `torch.autograd.grad` 与我们手写的矩阵微积分公式进行对比，确保误差在 `1e-6` 以内。
+

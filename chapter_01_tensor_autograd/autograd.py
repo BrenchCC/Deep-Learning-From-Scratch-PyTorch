@@ -6,7 +6,7 @@ import logging
 import torch
 
 sys.path.append(os.getcwd())
-from utils import setup_seed, get_device, Timer
+from utils import setup_seed, get_device, Timer, build_dot
 
 logger = logging.getLogger("Chapter01_Tensor_Autograd")
 
@@ -97,7 +97,6 @@ class ComplexMatrixGraph:
     """
     【Complex Example】
     演示全连接层 (Linear Layer) 的矩阵求导 (Vector-Jacobian Product)。
-    这是理解 LLM 训练效率和手写算子 (Custom Function) 的基石。
     
     Formula:
         Y = X @ W + b
@@ -174,8 +173,20 @@ class ComplexMatrixGraph:
     def verify(self):
         """验证矩阵求导逻辑"""
         # 1. Forward
+        logger.info(f"[Matrix Graph] Batch Size: {self.X.shape[0]}")
+        logger.info(f"[Matrix Graph] In_Dim: {self.X.shape[1]}")
+        logger.info(f"[Matrix Graph] Out_Dim: {self.W.shape[1]}")
+
+        logger.info(f"[Matrix Graph] X shape: {self.X.shape}")
+        logger.info(f"[Matrix Graph] X: {self.X}")
+        logger.info(f"[Matrix Graph] W shape: {self.W.shape}")
+        logger.info(f"[Matrix Graph] W: {self.W}")
+        logger.info(f"[Matrix Graph] b shape: {self.b.shape}")
+        logger.info(f"[Matrix Graph] b: {self.b}")
+        logger.info(f"[Matrix Graph] Upstream Grad: {self.upstream_grad}")
         Y = self.forward()
-        
+        logger.info(f"[Matrix Graph] Forward Output Shape: {Y.shape}")
+        logger.info(f"[Matrix Graph] Y: {Y}")
         # 2. PyTorch Autograd
         # 这里我们不定义具体的 Loss 函数，而是直接从 Y 开始反向传播
         # 传入 gradient 参数等于告诉 PyTorch: "已知 dL/dY = upstream_grad，请继续往前传"
@@ -196,10 +207,157 @@ class ComplexMatrixGraph:
         # 简单的维度检查打印，帮助理解 VJP
         logger.info(f"Shape Mismatch Debug: W.grad {self.W.grad.shape} vs Manual {grad_W_man.shape}")
 
+class FourLayerNetWithLoss:
+    """
+    四层网络 + MSE Loss
+    用于完整演示 forward → loss → backward → 梯度验证
+    
+    Architecture:
+        h1 = W1 x + b1
+        h2 = ReLU(h1)
+        h3 = W2 h2 + b2
+        ŷ  = W3 h3 + b3
+        L  = (ŷ - y)^2
+    """
+
+    def __init__(self, device: torch.device):
+        self.device = device
+
+        # 固定一个 2-d 输入，方便手推和验证
+        self.x = torch.tensor(
+            [1.0, 2.0],
+            device = device
+        )
+        self.y = torch.tensor(
+            0.5,
+            device = device
+        )
+
+        # 权重参数
+        self.w1 = torch.randn(
+            2, 2,
+            requires_grad = True,
+            device = device
+        )
+        self.b1 = torch.randn(
+            2,
+            requires_grad = True,
+            device = device
+        )
+
+        self.w2 = torch.randn(
+            2, 2,
+            requires_grad = True,
+            device = device
+        )
+        self.b2 = torch.randn(
+            2,
+            requires_grad = True,
+            device = device
+        )
+
+        self.w3 = torch.randn(
+            1, 2,
+            requires_grad = True,
+            device = device
+        )
+        self.b3 = torch.randn(
+            1,
+            requires_grad = True,
+            device = device
+        )
+
+    def forward(self):
+        """前向传播：构建完整计算图"""
+        self.h1 = self.w1 @ self.x + self.b1
+        self.h1.retain_grad()
+
+        self.h2 = torch.relu(self.h1)
+        self.h2.retain_grad()
+        
+        self.h3 = self.w2 @ self.h2 + self.b2
+        self.h3.retain_grad()
+
+        self.y_pred = self.w3 @ self.h3 + self.b3
+        self.y_pred.retain_grad()
+
+        self.loss = (self.y_pred - self.y) ** 2
+        self.loss.retain_grad()
+
+        return self.loss
+
+    def manual_backward(self):
+        """
+        手写反向传播（严格对应数学推导）
+        """
+        with torch.no_grad():
+            # dL/dy
+            dl_dypred = 2 * (self.y_pred - self.y)
+
+            # -------- Layer 4 --------
+            dl_dw3 = dl_dypred * self.h3.unsqueeze(0)
+            dl_db3 = dl_dypred  
+            dl_dh3 = self.w3.t() * dl_dypred
+
+            # -------- Layer 3 --------
+            dl_dw2 = dl_dh3 @ self.h2.unsqueeze(0)
+            dl_db2 = dl_dh3
+            dl_dh2 = self.w2.t() @ dl_dh3
+
+            # -------- Layer 2 --------
+            relu_mask = (self.h1 > 0).float().unsqueeze(1)
+            dl_dh1 = dl_dh2 * relu_mask
+            
+            # -------- Layer 1 --------
+            dl_dw1 = dl_dh1 @ self.x.unsqueeze(0)
+            dl_db1 = dl_dh1
+
+            return {
+                "w1": dl_dw1,
+                "b1": dl_db1.view_as(self.b1),
+                "w2": dl_dw2,
+                "b2": dl_db2.view_as(self.b2),
+                "w3": dl_dw3,
+                "b3": dl_db3.view_as(self.b3),
+            }
+    
+    def verify(self):
+        """ PyTorch Autograd 与手写梯度"""
+        loss = self.forward()
+        dot = build_dot(
+            loss,
+            params={
+                "w1": self.w1,
+                "b1": self.b1,
+                "w2": self.w2,
+                "b2": self.b2,
+                "w3": self.w3,
+                "b3": self.b3,
+            },
+        )
+        dot.render("chapter_01_tensor_autograd/four_layer_autograd_graph", cleanup=True)
+
+        loss.backward()
+
+        manual_grads = self.manual_backward()
+
+        for name, param in [
+            ("w1", self.w1),
+            ("b1", self.b1),
+            ("w2", self.w2),
+            ("b2", self.b2),
+            ("w3", self.w3),
+            ("b3", self.b3),
+        ]:
+            match = torch.allclose(param.grad, manual_grads[name], atol=1e-5)
+            logger.info(
+                f"[Grad Check] {name}: match={match} | "
+                f"autograd={param.grad.flatten()[:3]} | "
+                f"manual={manual_grads[name].flatten()[:3]}"
+            )
+
 
 def main():
-    # 1. Global Logger Configuration
-    # 严格遵守：只在 main 中配置 basicConfig
     logging.basicConfig(
         level = logging.INFO,
         format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -228,6 +386,11 @@ def main():
         )
         matrix_graph.verify()
         
+    # 5. Run a Four-Layer Network Example
+    logger.info("--- Starting Four-Layer Network Example with Loss Function ---")
+    four_layer_graph = FourLayerNetWithLoss(device = device)
+    four_layer_graph.verify()
+    
     logger.info("Chapter 01: Computational Graph & Autograd - Completed.")
 
 if __name__ == "__main__":

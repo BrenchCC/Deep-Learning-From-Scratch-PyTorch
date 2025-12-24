@@ -2,7 +2,7 @@ import torch
 import logging
 
 # Configure logger for this module
-logger = logging.getLogger("Device Auto Config")
+logger = logging.getLogger("Device_Auto_Config")
 
 def get_device():
     """

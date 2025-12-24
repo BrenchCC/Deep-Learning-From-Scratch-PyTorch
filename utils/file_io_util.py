@@ -5,7 +5,7 @@ import logging
 from typing import Any, Dict, Union
 
 # Configure logger for this module
-logger = logging.getLogger("File IO Util")
+logger = logging.getLogger("File_IO_Util_Tool")
 
 def save_json(data: Union[Dict, list], file_path: str, indent: int = 4):
     """

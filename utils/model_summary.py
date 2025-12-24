@@ -3,7 +3,7 @@ import logging
 import torch.nn as nn
 
 # Configure logger for this module
-logger = logging.getLogger("Model Summary Tool")
+logger = logging.getLogger("Model_Summary_Tool")
 
 def count_parameters(model: nn.Module, only_trainable: bool = True):
     """
