@@ -307,7 +307,7 @@ x^\top
 
 ---
 
-#@ 四、完整反向流程总结
+# 四、完整反向流程总结
 
 > **反向传播不是在“算 loss”，  
 > 而是在把 loss 的导数，一层一层传回去，  
@@ -325,5 +325,6 @@ loss → 输出层 → 中间层 → 输入层
 **[Code](autograd.py) 说明**:
 1.  **Simple Example**: 对应理论部分的 $z = xy + \sin(x)$，验证标量链式法则。
 2.  **Complex Example**: 对应理论部分的 Linear Layer ($Y=XW+b$)，验证矩阵 VJP。
-3.  **Core Logic**: 通过 `torch.autograd.grad` 与我们手写的矩阵微积分公式进行对比，确保误差在 `1e-6` 以内。
+3.  **Four-Layer Network**: 对应理论部分的四层神经网络，验证多参数、多层的反向传播。
+4.  **Core Logic**: 通过 `torch.autograd.grad` 与我们手写的矩阵微积分公式进行对比，确保误差在 `1e-6` 以内。
 
