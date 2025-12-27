@@ -6,6 +6,9 @@
 
 虽然现代 PyTorch 封装得非常完美，只需调用 `.backward()`，但理解其底层的 **DAG（有向无环图）** 构建逻辑和 **Vector-Jacobian Product (VJP)** 的传播机制，是优化显存（如 Checkpointing 技术）、理解分布式训练（如 Pipeline Parallelism）以及手写复杂算子（Custom Autograd Function）的基础。
 
+> 为了更好地理解代码，本章额外撰写了PyTorch相关的Tensor维度操作代码以及说明，帮助读者更深入地理解计算图的构建与自动微分的实现。
+[DimTransform Code with Pytorch](dim_transform_torch.py) 
+[Instruction Tutorial](tensor_dim_transform.md)
 ---
 
 ## 2. 核心概念：计算图与 DAG
@@ -322,9 +325,10 @@ loss → 输出层 → 中间层 → 输入层
 
 ## 7. Code Example 浅析
 > 本章代码将不依赖神经网络层（`nn.Linear`），而是直接操作 `Tensor` 来构建计算图，并手动实现 **Vector-Jacobian Product (VJP)**，以此来验证 PyTorch 自动微分的正确性。
-**[Code](autograd.py) 说明**:
+**[反向传播 Code](autograd.py) 说明**:
 1.  **Simple Example**: 对应理论部分的 $z = xy + \sin(x)$，验证标量链式法则。
 2.  **Complex Example**: 对应理论部分的 Linear Layer ($Y=XW+b$)，验证矩阵 VJP。
 3.  **Four-Layer Network**: 对应理论部分的四层神经网络，验证多参数、多层的反向传播。
 4.  **Core Logic**: 通过 `torch.autograd.grad` 与我们手写的矩阵微积分公式进行对比，确保误差在 `1e-6` 以内。
 
+**[DimTransform Code with Pytorch](dim_transform.py) 说明**:
