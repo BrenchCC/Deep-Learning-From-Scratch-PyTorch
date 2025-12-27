@@ -388,8 +388,9 @@ def main():
         
     # 5. Run a Four-Layer Network Example
     logger.info("--- Starting Four-Layer Network Example with Loss Function ---")
-    four_layer_graph = FourLayerNetWithLoss(device = device)
-    four_layer_graph.verify()
+    with Timer("Four-Layer Network Autograd Verification"):
+        four_layer_graph = FourLayerNetWithLoss(device = device)
+        four_layer_graph.verify()
     
     logger.info("Chapter 01: Computational Graph & Autograd - Completed.")
 
