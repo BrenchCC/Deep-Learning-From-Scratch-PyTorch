@@ -94,6 +94,7 @@ def main():
     # Stack them to analyze layer variance: (Layers, Batch, Seq, Dim)
     stacked_layers = torch.stack([layer1_out, layer2_out], dim = 0)
     analyze_tensor("Stacked Layers", stacked_layers)
+    logger.info("Completed Transformer-like Dimension Ops Demo.")
 
 if __name__ == "__main__":
     main()
