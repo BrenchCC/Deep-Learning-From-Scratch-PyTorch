@@ -1,9 +1,11 @@
 import logging
 
+import torch
 import torch.nn as nn
 
 # Configure logger for this module
 logger = logging.getLogger("Model_Summary_Tool")
+
 
 def count_parameters(model: nn.Module, only_trainable: bool = True):
     """
@@ -53,6 +55,18 @@ def log_model_info(model: nn.Module):
     logger.info(f"Trainable Parameters: {trainable_params:,}")
     logger.info(f"Estimated Model Size (fp32): {size_mb:.2f} MB")
 
+def log_model_info_from_path(path: str, model: nn.Module = torch.nn.Module()):
+    """
+    Load the model state dictionary from a file.
+    
+    Args:
+        path: Path to the saved model state dictionary.
+        model: The PyTorch model instance.
+    """
+    model.load_state_dict(torch.load(path))
+    logger.info(f"Model loaded from {path}.")
+    log_model_info(model)
+    
 if __name__ == "__main__":
     # --- Logging Setup ---
     logging.basicConfig(

@@ -33,13 +33,16 @@ $$
 
 ### 2.2 常见函数分析
 
-* **Sigmoid**: $\sigma(z) = \frac{1}{1 + e^{-z}}$
+* **Sigmoid**: 
+    * $\sigma(z) = \frac{1}{1 + e^{-z}}$
     * **特点**：输出在 (0, 1)，平滑。
     * **缺点**：容易导致梯度消失（Gradient Vanishing），特别是在深层网络中；输出不是 Zero-centered。
-* **ReLU (Rectified Linear Unit)**: $\text{ReLU}(z) = \max(0, z)$
+* **ReLU (Rectified Linear Unit)**: 
+    * $\text{ReLU}(z) = \max(0, z)$
     * **特点**：计算极其简单，解决了正区间的梯度消失问题，稀疏性。
     * **缺点**：Dead ReLU 问题（负区间梯度为 0，神经元可能永久死亡）。
-* **GELU (Gaussian Error Linear Unit)**: $\text{GELU}(x) = x \Phi(x)$
+* **GELU (Gaussian Error Linear Unit)**: 
+    * $\text{GELU}(x) = x \Phi(x)$
     * **特点**：在 BERT、GPT 等现代 LLM 中广泛使用。它是 ReLU 的平滑版本，且引入了随机正则化的思想（基于高斯分布）。它允许小的负值通过，保留了更多信息。
 
 ---
@@ -81,7 +84,7 @@ $$
 
 ---
 
-# 5. 实例分析 (Examples) 
+## 5. 实例分析 (Examples) 
 
 为了更直观地展示 MLP 的核心能力——**万能逼近 (Universal Approximation)**，我们将通过对比“线性变换”与“非线性拟合”两个场景，来揭示为什么我们需要隐藏层和激活函数。
 
@@ -153,9 +156,98 @@ model_complex = nn.Sequential(
 )
 ```
 
-## 6. Code Implementation: Chapter 02 - The Universal Approximator (MLP)
+## 6. Code Implementation: Chapter 02 - The Universal Approximator (MLP) with Exploitation of Universal Approximation Theorem
 > [MLP Code](mlp.py)
 
 这是基于 **Chapter 02** 理论部分的工程化代码实现。
 该代码构建了一个基于 PyTorch 的多层感知机神经网络（MLP），用于拟合非线性正弦函数 $y = \sin(x)$，以此证明 **万能逼近定理 (Universal Approximation Theorem)**。
 代码运行后将生成拟合曲线对比图，直观展示 ReLU 激活函数如何通过“分段线性”逼近曲线。
+在代码的standard模式中：我在训练（`train_model`）和可视化验证（`visualize_approximation`）时，使用的是同一组 `x_tensor` 和 `y_tensor`。
+在常规的机器学习工程中，这确实是**大忌（Data Leakage / Overfitting）**。但在 **Chapter 02: Universal Approximation Theorem (万能逼近定理)** 这个特定章节中，这是**有意为之**的：
+### 6.1. 学术阐述：拟合能力 vs. 泛化能力
+
+* **本章目标 (Representation Capacity)**：
+    万能逼近定理探讨的是：“神经网络是否**有能力**表示（Represent）或逼近任意函数？”
+    我们关注的是模型的**表达上限**。为了验证这个定理，我们需要证明网络能够将训练集上的 Loss 降到接近 0。即：
+    $$\lim_{N \to \infty} \mathcal{L}_{train} \to 0$$
+    只要它能完美覆盖住给定的正弦曲线，定理就得到了直观验证。
+
+* **常规目标 (Generalization)**：
+    常规 ML/DL 任务探讨的是：“模型在**从未见过**的数据上表现如何？”
+    这时候必须划分 Train/Test Set。如果在常规任务中这样做，模型会死记硬背（Memorization），导致 Training Loss 很低，但 Test Loss 很高（过拟合）。
+
+### 6.2. 通俗解释：裁缝做衣 vs. 考试
+
+* **本章场景 (裁缝做衣)**：
+    我想证明我是个万能裁缝（MLP），能做任何形状的衣服。
+    你作为模特站在这里（Training Data），我量你的尺寸，做出一件完美贴合你身材的衣服。
+    **验证方法**：就是让你穿上这件衣服，看合不合身。
+    *如果我换一个人（Test Data）来穿，肯定不合身，但那不是本章关心的重点。本章只关心“我能不能做出贴合特定形状的衣服”。*
+
+* **常规场景 (学生考试)**：
+    老师教学生（训练），是为了让学生学会解题思路。
+    **验证方法**：考试时必须出**没做过**的新题（Test Data）。
+    *如果考试还考平时练习的原题，学生背下答案就能满分，这就测不出真实水平了。*
+
+### 6.3. 如何观测+验证？
+
+1.  **视觉验证**：我们需要直观地看到红色的预测线（Prediction）是否能严丝合缝地盖住灰色的真实线（Ground Truth）。如果分了测试集，中间会有空缺，不利于观察“分段线性逼近”的细节。
+2.  **验证定理**：证明只要神经元够多（Width），MLP 就能记忆任意复杂的几何形态。
+
+### 6.4 补充
+1.  **3D多维**：为了更直观地展示 MLP 的能力，我们可以将输入 $x$ 扩展到 $x \in \mathbb{R}^2$（二维空间）或 $x \in \mathbb{R}^3$（三维空间）。
+    这样，我们可以可视化 MLP 如何在高维空间中逼近复杂的函数。
+2.  **代码实现**：代码脚本中实现了多维输入和3D 可视化，展示了 MLP 在高维空间中的逼近能力。
+
+
+# Chapter 02 结语：一些补充
+## 1. 理论陷阱：存在性 $\neq$ 可学习性 (Existence $\neq$ Learnability)
+
+### 学术阐述
+万能逼近定理（Universal Approximation Theorem）是一个**存在性定理 (Existence Theorem)**。它只保证了“在参数空间中，**存在**一组权重 $W^*$ 能够逼近目标函数 $f(x)$”。
+然而，它完全没有告诉我们：
+1.  这组权重 $W^*$ **在哪里**？
+2.  使用基于梯度的优化算法（如 SGD/Adam）是否**能够找到**这组权重？
+
+### 通俗解释
+* **地图 vs. 宝藏**：定理就像一张地图，上面画了一个圈说“这里有宝藏”。但实际上，你手里只有一把生锈的铲子（SGD），而且地形崎岖不平（非凸优化曲面）。
+* **现实**：很多时候模型训练失败（Loss 不下降），不是因为模型**能不能**（Capacity 不够），而是因为我们**找不到**（Optimization 失败）。
+* **结论**：这就是为什么下一章 **Chapter 03 Optimization** 如此关键。没有好的优化器，万能逼近只是一纸空文。
+
+---
+
+## 2. 深度 vs. 宽度：效率的博弈 (Depth vs. Width)
+
+### 核心问题
+既然单隐层 MLP（只要够宽）就能逼近万物，为什么我们要搞 **Deep Learning**（几百层），而不是 **Wide Learning**（一层几亿个神经元）？
+
+### 数学推导 (简述)
+对于某些特定的函数（如高维空间的奇偶校验 Parity Function），如果用浅层网络（Shallow Network）拟合，所需的神经元数量随着输入维度 $d$ 呈指数级增长 $O(2^d)$。
+而如果使用深层网络（Deep Network），所需的参数量仅为多项式级别 $O(d^k)$。
+
+### 简单例子 (折纸)
+* **任务**：把一张纸折叠成复杂的形状。
+* **宽度 (Width)**：相当于你只有一步操作机会，但你有无数只手同时折。你需要极其精密的协调。
+* **深度 (Depth)**：相当于你可以折一次，压平，再折一次，再压平... 通过**复用**之前的折痕（特征），你可以用很少的步骤折出极其复杂的结构。
+* **LLM 启示**：LLM 的推理能力来自于 Layer 的堆叠（Depth），每一层都在上一层的基础上进行更抽象的逻辑推理。
+
+---
+
+## 3. MLP 在现代 LLM 中的真实地位
+
+你现在是一个 LLM 算法工程师，你需要知道 MLP 在 Transformer（如 GPT-4, LLaMA）中扮演的角色。
+
+### 结构占比
+在标准的 Transformer Block 中：
+$$
+\text{Block}(x) = \text{Attention}(x) + \text{MLP}(x)
+$$
+MLP 层（通常称为 FFN - Feed Forward Network）占据了模型约 **2/3 的参数量**。
+* Attention 层负责 **“信息的路由与聚合”** (Context Mixing)。
+* MLP 层负责 **“知识的存储与记忆”** (Knowledge Storage)。
+
+### 前沿研究 (Key-Value Memories)
+有一种观点认为，MLP 层的全连接权重实际上是**Key-Value Memory**：
+* 前一层 $W_1$ 识别模式（Key Detection）。
+* 后一层 $W_2$ 输出对应的内容（Value Retrieval）。
+* **例子**：当输入是 "The capital of France is"，Attention 关注到了上下文，而 MLP 层负责在它的权重里“检索”出 "Paris" 这个事实。
