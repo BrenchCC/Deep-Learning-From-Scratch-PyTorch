@@ -200,32 +200,32 @@ model_complex = nn.Sequential(
 2.  **代码实现**：代码脚本中实现了多维输入和3D 可视化，展示了 MLP 在高维空间中的逼近能力。
 
 
-# Chapter 02 结语：一些补充
-## 1. 理论陷阱：存在性 $\neq$ 可学习性 (Existence $\neq$ Learnability)
+## 7. Chapter 02 结语：一些补充
+### 7.1 理论陷阱：存在性 $\neq$ 可学习性 (Existence $\neq$ Learnability)
 
-### 学术阐述
+#### 学术阐述
 万能逼近定理（Universal Approximation Theorem）是一个**存在性定理 (Existence Theorem)**。它只保证了“在参数空间中，**存在**一组权重 $W^*$ 能够逼近目标函数 $f(x)$”。
 然而，它完全没有告诉我们：
 1.  这组权重 $W^*$ **在哪里**？
 2.  使用基于梯度的优化算法（如 SGD/Adam）是否**能够找到**这组权重？
 
-### 通俗解释
+#### 通俗解释
 * **地图 vs. 宝藏**：定理就像一张地图，上面画了一个圈说“这里有宝藏”。但实际上，你手里只有一把生锈的铲子（SGD），而且地形崎岖不平（非凸优化曲面）。
 * **现实**：很多时候模型训练失败（Loss 不下降），不是因为模型**能不能**（Capacity 不够），而是因为我们**找不到**（Optimization 失败）。
 * **结论**：这就是为什么下一章 **Chapter 03 Optimization** 如此关键。没有好的优化器，万能逼近只是一纸空文。
 
 ---
 
-## 2. 深度 vs. 宽度：效率的博弈 (Depth vs. Width)
+### 7.2 深度 vs. 宽度：效率的博弈 (Depth vs. Width)
 
-### 核心问题
+#### 核心问题
 既然单隐层 MLP（只要够宽）就能逼近万物，为什么我们要搞 **Deep Learning**（几百层），而不是 **Wide Learning**（一层几亿个神经元）？
 
-### 数学推导 (简述)
+#### 数学推导 (简述)
 对于某些特定的函数（如高维空间的奇偶校验 Parity Function），如果用浅层网络（Shallow Network）拟合，所需的神经元数量随着输入维度 $d$ 呈指数级增长 $O(2^d)$。
 而如果使用深层网络（Deep Network），所需的参数量仅为多项式级别 $O(d^k)$。
 
-### 简单例子 (折纸)
+#### 简单例子 (折纸)
 * **任务**：把一张纸折叠成复杂的形状。
 * **宽度 (Width)**：相当于你只有一步操作机会，但你有无数只手同时折。你需要极其精密的协调。
 * **深度 (Depth)**：相当于你可以折一次，压平，再折一次，再压平... 通过**复用**之前的折痕（特征），你可以用很少的步骤折出极其复杂的结构。
@@ -233,20 +233,21 @@ model_complex = nn.Sequential(
 
 ---
 
-## 3. MLP 在现代 LLM 中的真实地位
+### 7.3 MLP 在现代 LLM 中的真实地位
 
-你现在是一个 LLM 算法工程师，你需要知道 MLP 在 Transformer（如 GPT-4, LLaMA）中扮演的角色。
 
-### 结构占比
+#### 结构占比
 在标准的 Transformer Block 中：
-$$
+
+$
 \text{Block}(x) = \text{Attention}(x) + \text{MLP}(x)
-$$
+$
+
 MLP 层（通常称为 FFN - Feed Forward Network）占据了模型约 **2/3 的参数量**。
 * Attention 层负责 **“信息的路由与聚合”** (Context Mixing)。
 * MLP 层负责 **“知识的存储与记忆”** (Knowledge Storage)。
 
-### 前沿研究 (Key-Value Memories)
+#### 前沿研究 (Key-Value Memories)
 有一种观点认为，MLP 层的全连接权重实际上是**Key-Value Memory**：
 * 前一层 $W_1$ 识别模式（Key Detection）。
 * 后一层 $W_2$ 输出对应的内容（Value Retrieval）。
