@@ -1,6 +1,6 @@
 # Chapter 03: Optimization & Stability - Theoretical Review
 
-## 0. 章节概述 (Overview)
+## 章节概述 (Overview)
 
 在 Chapter 02 中，我们通过 MLP 证明了神经网络作为通用函数拟合器的能力。然而，拥有一个强大的架构只是第一步。在深度学习（尤其是大模型训练）中，如何让网络**快速收敛**（Optimization）以及在深层结构中保持**数值稳定**（Stability）是决定模型能否训练成功的关键。
 
@@ -110,24 +110,30 @@ optimizer = torch.optim.AdamW(
 
 **Batch Normalization**:
 对 Channel $c$ 的均值计算（跨 Batch $N$ 和空间 $H, W$）：
+
 $$
 \mu_c = \frac{1}{N \cdot H \cdot W} \sum_{n, h, w} x_{n, c, h, w}
 $$
+
 $$
 \sigma_c^2 = \frac{1}{N \cdot H \cdot W} \sum_{n, h, w} (x_{n, c, h, w} - \mu_c)^2
 $$
+
 $$
 \hat{x} = \frac{x - \mu_c}{\sqrt{\sigma_c^2 + \epsilon}} \cdot \gamma + \beta
 $$
 
 **Layer Normalization**:
 对样本 $n$ 的均值计算（跨 Feature $D$）：
+
 $$
 \mu_n = \frac{1}{D} \sum_{d} x_{n, d}
 $$
+
 $$
 \sigma_n^2 = \frac{1}{D} \sum_{d} (x_{n, d} - \mu_n)^2
 $$
+
 *(注意：Transformer 中 LN 通常是对每个 token 的 hidden dimension 进行归一化)*
 
 #### 简单与复杂示例 (Examples)
@@ -171,21 +177,25 @@ Dropout 的核心解释是**集成学习 (Ensemble Learning)**。一个包含 $N
 设输入 $x$，mask向量 $m \sim \text{Bernoulli}(1-p)$ (保留概率为 $1-p$)。
 
 **Training**:
+
 $$
 y = \frac{1}{1-p} (x \odot m)
 $$
-*(解释：除以 $1-p$ 是为了放大保留下来的数值，保持期望值不变)*
+
+*(解释：除以1-p是为了放大保留下来的数值，保持期望值不变)*
 
 **Inference**:
+
 $$
 y = x
 $$
+
 *(解释：无需任何操作)*
 
 #### 简单与复杂示例 (Examples)
 
 * **Simple Example**:
-    向量 $x = [10, 20, 30, 40]$，$p=0.5$。
+    向量 $x = [10, 20, 30, 40]$， $p=0.5$ 。
     * **Training**: 随机 mask 掉两个，比如 $[10, 0, 30, 0]$。放大 2 倍 -> $[20, 0, 60, 0]$。期望值 $\mathbb{E}[y] = [10, 20, 30, 40]$，与原值一致。
     * **Inference**: 直接输出 $[10, 20, 30, 40]$。
 
