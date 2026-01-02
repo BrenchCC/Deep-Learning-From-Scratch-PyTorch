@@ -12,12 +12,29 @@
 - **最新技术**：涵盖从传统神经网络到现代Transformer、LLM的完整技术栈
 - **教学导向**：注重概念解释和直观理解，适合自学和教学使用
 
-## 🛠️ 技术栈
-- **深度学习框架**：PyTorch 2.0+
-- **编程语言**：Python 3.9+
-- **数据处理**：NumPy, Pandas
-- **可视化**：Matplotlib, Seaborn
-- **工具库**：Scikit-learn
+## 📁 项目目录结构
+```ascii
+Deep-Learning-From-Scratch-PyTorch/
+├── README.md              # 项目说明文档
+├── requirements.txt       # 依赖库列表
+├── utils/                 # 通用工具箱
+│   ├── __init__.py
+│   ├── device.py          # TorchDevice工具
+│   ├── file_io_util.py    # 文件IO工具
+│   ├── model_summary.py   # 模型参数查看工具
+│   ├── seed.py            # 随机种子固定工具
+│   └── timer.py           # 时间测量工具
+├── chapter_01_tensor_autograd/   # 第1章：计算图与自动微分
+├── chapter_02_nn_basics_mlp/      # 第2章：万能逼近器（MLP）
+├── chapter_03_optimization_regularization/  # 第3章：优化与正则化
+├── chapter_04_cnn_classic/        # 第4章：经典CNN
+├── chapter_05_resnet_modern_cnn/  # 第5章：ResNet与现代CNN
+├── chapter_06_rnn_lstm_seq/       # 第6章：RNN系列
+├── chapter_07_attention_mechanism/ # 第7章：注意力机制
+├── chapter_08_transformer_vanilla/ # 第8章：原始Transformer
+├── chapter_09_efficient_attention/ # 第9章：高效注意力
+└── chapter_10_llm_modern_components/ # 第10章：LLM现代组件
+```
 
 ## 📦 安装指南
 
@@ -90,29 +107,6 @@ pip install -r requirements.txt
 - **关键技术**：缩放规律、指令微调、对齐技术、高效训练
 - **应用场景**：对话系统、文本生成、代码生成
 
-## 📁 项目目录结构
-```ascii
-Deep-Learning-From-Scratch-PyTorch/
-├── README.md              # 项目说明文档
-├── requirements.txt       # 依赖库列表
-├── utils/                 # 通用工具箱
-│   ├── __init__.py
-│   ├── device.py          # TorchDevice工具
-│   ├── file_io_util.py    # 文件IO工具
-│   ├── model_summary.py   # 模型参数查看工具
-│   ├── seed.py            # 随机种子固定工具
-│   └── timer.py           # 时间测量工具
-├── chapter_01_tensor_autograd/   # 第1章：计算图与自动微分
-├── chapter_02_nn_basics_mlp/      # 第2章：万能逼近器（MLP）
-├── chapter_03_optimization_regularization/  # 第3章：优化与正则化
-├── chapter_04_cnn_classic/        # 第4章：经典CNN
-├── chapter_05_resnet_modern_cnn/  # 第5章：ResNet与现代CNN
-├── chapter_06_rnn_lstm_seq/       # 第6章：RNN系列
-├── chapter_07_attention_mechanism/ # 第7章：注意力机制
-├── chapter_08_transformer_vanilla/ # 第8章：原始Transformer
-├── chapter_09_efficient_attention/ # 第9章：高效注意力
-└── chapter_10_llm_modern_components/ # 第10章：LLM现代组件
-```
 
 ## 🚀 使用方法
 
