@@ -282,23 +282,23 @@ class RMSNorm(nn.Module):
 
 1.  计算总范数 (Total Norm):
 
-    $$
-    \|g\|_2 = \sqrt{\sum_{\theta \in \Theta} \|\nabla_\theta J(\theta)\|_2^2}
-    $$
+$$
+\|g\|_2 = \sqrt{\sum_{\theta \in \Theta} \|\nabla_\theta J(\theta)\|_2^2}
+$$
 
 2.  计算缩放系数 (Clipping Coefficient):
 
-    $$
-    \text{scale} = \min\left(1, \frac{C}{\|g\|_2 + \epsilon}\right)
-    $$
+$$
+\text{scale} = \min\left(1, \frac{C}{\|g\|_2 + \epsilon}\right)
+$$
 
-    *(如果 $\|g\|_2 \le C$，scale 为 1，不做改变；否则 scale < 1)*
+*(如果 $\|g\|_2 \le C$，scale 为 1，不做改变；否则 scale < 1)*
 
 3.  更新梯度:
 
-    $$
-    g \leftarrow g \cdot \text{scale}
-    $$
+$$
+g \leftarrow g \cdot \text{scale}
+$$
 
 #### 简单与复杂示例 (Examples)
 
