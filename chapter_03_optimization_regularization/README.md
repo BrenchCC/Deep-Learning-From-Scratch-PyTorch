@@ -217,20 +217,24 @@ RMSNorm 移除了均值计算部分，仅利用均方根（RMS）进行缩放。
 假设输入向量为 $x$，维度为 $D$。
 
 **LayerNorm 回顾**:
+
 $$
 \bar{x} = \frac{x - \mu}{\sigma}, \quad \text{where } \mu = \frac{1}{D}\sum x_i
 $$
 
 **RMSNorm 计算**:
 我们直接计算均方根 (RMS):
+
 $$
 \text{RMS}(x) = \sqrt{\frac{1}{D} \sum_{i=1}^{D} x_i^2 + \epsilon}
 $$
 
 归一化与缩放 (Scaling):
+
 $$
 \bar{x}_i = \frac{x_i}{\text{RMS}(x)} \cdot g_i
 $$
+
 *(其中 $g_i$ 是可学习的缩放参数，RMSNorm 去掉了 LN 中的偏置项 $\beta$)*
 
 #### 简单与复杂示例 (Examples)
@@ -277,17 +281,21 @@ class RMSNorm(nn.Module):
 设所有参数的梯度拼接成一个大向量 $g$。设定阈值为 $C$ (max_norm)。
 
 1.  计算总范数 (Total Norm):
+
     $$
     \|g\|_2 = \sqrt{\sum_{\theta \in \Theta} \|\nabla_\theta J(\theta)\|_2^2}
     $$
 
 2.  计算缩放系数 (Clipping Coefficient):
+
     $$
     \text{scale} = \min\left(1, \frac{C}{\|g\|_2 + \epsilon}\right)
     $$
+
     *(如果 $\|g\|_2 \le C$，scale 为 1，不做改变；否则 scale < 1)*
 
 3.  更新梯度:
+
     $$
     g \leftarrow g \cdot \text{scale}
     $$
