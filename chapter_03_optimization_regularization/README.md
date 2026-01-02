@@ -201,3 +201,120 @@ $$
 
 * **Complex Example (MC Dropout)**:
     通常 Dropout 在推理时关闭。但如果我们想估计模型的不确定性（Uncertainty），可以在**推理时强行开启 Dropout**，并进行多次前向传播。如果多次预测结果方差很大，说明模型对该输入不确定。这在自动驾驶或医疗诊断（需要可解释性）中非常有用。
+
+### 2.3 RMSNorm: 更加高效的归一化
+
+#### 学术阐述 (Academic Elaboration)
+**RMSNorm** 是一种简化的 Layer Normalization。研究表明，LayerNorm 的成功主要归功于其对 **方差（Variance）** 的缩放，而 **均值中心化（Mean Centering）** 带来的收益微乎其微。
+RMSNorm 移除了均值计算部分，仅利用均方根（RMS）进行缩放。这不仅减少了计算量（节省了 Mean 的计算和减法操作），还保持了数值稳定性，特别是在 FP16/BF16 训练下具有更好的鲁棒性。
+
+#### 通俗解释 (Intuitive Explanation)
+* **LayerNorm**: 像是一个严格的教官，先让大家按高矮排队算出平均身高，把每个人减去平均身高（归零），再统一缩放到标准范围。
+* **RMSNorm**: 像是一个务实的教官。他认为大家的平均身高本来就差不多是 0（因为权重初始化通常是 0 均值），没必要每次都费劲算平均值。他直接看大家的“能量大小”（幅值），如果整体能量太强，就统一除以一个系数把能量压下来。简单粗暴，但效果一样好。
+
+#### 数学推导 (Mathematical Derivation)
+
+假设输入向量为 $x$，维度为 $D$。
+
+**LayerNorm 回顾**:
+$$
+\bar{x} = \frac{x - \mu}{\sigma}, \quad \text{where } \mu = \frac{1}{D}\sum x_i
+$$
+
+**RMSNorm 计算**:
+我们直接计算均方根 (RMS):
+$$
+\text{RMS}(x) = \sqrt{\frac{1}{D} \sum_{i=1}^{D} x_i^2 + \epsilon}
+$$
+
+归一化与缩放 (Scaling):
+$$
+\bar{x}_i = \frac{x_i}{\text{RMS}(x)} \cdot g_i
+$$
+*(其中 $g_i$ 是可学习的缩放参数，RMSNorm 去掉了 LN 中的偏置项 $\beta$)*
+
+#### 简单与复杂示例 (Examples)
+
+* **Simple Example**:
+    向量 $x = [3, 4]$。
+    * $\text{RMS} = \sqrt{(9+16)/2} = \sqrt{12.5} \approx 3.53$
+    * Output $\approx [3/3.53, 4/3.53] \approx [0.85, 1.13]$ (保留了相对大小，限制了幅值)。
+
+* **Complex Example (Llama 2 Architecture)**:
+    在 Llama 2 中，RMSNorm 被放置在 Attention 和 FeedForward 层**之前** (Pre-Normalization)。这种组合配合 RMSNorm 的计算优势，使得模型在几千个 GPU 上训练时，通信和计算的开销更低，且数值更不容易溢出。
+
+#### 代码片段样式 (Snippet)
+
+```python
+# 手写 RMSNorm (PyTorch)
+class RMSNorm(nn.Module):
+    def __init__(self, dim, eps = 1e-6):
+        super().__init__()
+        self.eps = eps
+        # 只有缩放参数 gamma (weight)，没有偏置 beta
+        self.weight = nn.Parameter(torch.ones(dim))
+
+    def forward(self, x):
+        # 计算 RMS
+        # x.pow(2).mean(-1, keepdim=True) 计算均方
+        # rsqrt 是 1/sqrt 的倒数平方根，速度更快
+        norm = x * torch.rsqrt(x.pow(2).mean(-1, keepdim = True) + self.eps)
+        return norm * self.weight
+```
+
+### 2.4 Gradient Clipping: 防止梯度爆炸的阀门
+
+#### 学术阐述 (Academic Elaboration)
+在深度神经网络（特别是 RNN 和深层 Transformer）中，反向传播时梯度的累积可能导致**梯度爆炸 (Exploding Gradient)**，使得参数更新步长过大，直接飞出最优解区域，导致 Loss 变为 NaN。
+**Gradient Norm Clipping** 通过限制梯度向量的 $L_2$ 范数（Norm）来解决此问题。如果梯度的范数超过阈值，就对其进行等比例缩小（Rescaling），改变梯度的模长但不改变梯度的**方向**。
+
+#### 通俗解释 (Intuitive Explanation)
+* **现象**: 就像你在玩赛车游戏，突然踩了一脚油门（梯度极大），车子瞬间冲出赛道撞毁（Loss NaN）。
+* **Clipping**: 给车子装一个“限速器”。不管你油门踩多深，如果速度表显示超过 100km/h，系统强制把速度限制在 100km/h，但方向盘的角度不变，保证你依然朝着正确的方向开，只是别开太快翻车了。
+
+#### 数学推导 (Mathematical Derivation)
+
+设所有参数的梯度拼接成一个大向量 $g$。设定阈值为 $C$ (max_norm)。
+
+1.  计算总范数 (Total Norm):
+    $$
+    \|g\|_2 = \sqrt{\sum_{\theta \in \Theta} \|\nabla_\theta J(\theta)\|_2^2}
+    $$
+
+2.  计算缩放系数 (Clipping Coefficient):
+    $$
+    \text{scale} = \min\left(1, \frac{C}{\|g\|_2 + \epsilon}\right)
+    $$
+    *(如果 $\|g\|_2 \le C$，scale 为 1，不做改变；否则 scale < 1)*
+
+3.  更新梯度:
+    $$
+    g \leftarrow g \cdot \text{scale}
+    $$
+
+#### 简单与复杂示例 (Examples)
+
+* **Simple Example**:
+    梯度 $g = [3, 4]$，模长为 5。设定 Clip Threshold $C = 2.5$。
+    * 模长 5 > 2.5，需要缩放。
+    * Scale = $2.5 / 5 = 0.5$。
+    * 新梯度 $g_{new} = [1.5, 2.0]$。方向不变，模长变为 2.5。
+
+* **Complex Example (Training Stability)**:
+    在 GPT-3 等大模型训练初期，梯度往往极不稳定。如果不加 Clipping，第一次迭代 Loss 可能直接跳到 10000+。通常我们将 max_norm 设置为 1.0。这意味着所有的参数更新向量组合起来的长度不能超过 1.0。这是一种极强的稳定性保障。
+
+#### 代码片段样式 (Snippet)
+
+```python
+# PyTorch 内置的 Gradient Clipping
+# 通常在 loss.backward() 之后，optimizer.step() 之前调用
+loss.backward()
+
+# 对所有参数的梯度进行裁剪，max_norm 通常设为 1.0
+torch.nn.utils.clip_grad_norm_(
+    model.parameters(),
+    max_norm = 1.0
+)
+
+optimizer.step()
+```
