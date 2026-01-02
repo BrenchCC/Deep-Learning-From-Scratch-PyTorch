@@ -40,7 +40,7 @@ Deep-Learning-From-Scratch-PyTorch/
 
 ### 1. 克隆仓库
 ```bash
-git clone https://github.com/yourusername/Deep-Learning-From-Scratch-PyTorch.git
+git clone https://github.com/BrenchCC/Deep-Learning-From-Scratch-PyTorch.git
 cd Deep-Learning-From-Scratch-PyTorch
 ```
 
