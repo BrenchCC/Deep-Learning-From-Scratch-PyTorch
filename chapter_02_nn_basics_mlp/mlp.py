@@ -366,7 +366,6 @@ def mlp_demo():
     """
     Main execution pipeline.
     """
-    # 1. Logging Config (Strictly in main)
     logging.basicConfig(
         level = logging.INFO,
         format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -374,15 +373,15 @@ def mlp_demo():
         datefmt = '%Y-%m-%d %H:%M:%S'
     )
     
-    # 2. Argument Parsing
+    # Argument Parsing
     args = parse_args()
     logger.info(f"Arguments parsed: {vars(args)}")
 
-    # 3. Setup
+    # Setup seed and device
     setup_seed(seed = args.seed)
     device = get_device()
     
-    # 4. Data Generation Strategy based on Input Dim
+    # Data Generation Strategy based on Input Dim
     if args.input_dim == 1:
         # --- 1D Logic (Original) ---
         if args.mode == "standard":
@@ -420,7 +419,7 @@ def mlp_demo():
         # x_test/y_test not explicitly needed for 3D vis function as it generates its own mesh
         x_test, y_test = None, None
 
-    # 5. Model Initialization (Dynamic Input Dim)
+    # Model Initialization (Dynamic Input Dim)
     model = MLP(
         input_dim = args.input_dim,
         hidden_dim = args.hidden_dim,
@@ -428,7 +427,7 @@ def mlp_demo():
     )
     log_model_info(model = model)
 
-    # 6. Training
+    # Training
     train_model(
         model = model,
         x_train = x_train,
@@ -438,7 +437,7 @@ def mlp_demo():
         device = device
     )
 
-    # 7. Visualization & Saving
+    # Visualization & Saving
     if args.input_dim == 1:
         vis_path = os.path.join(args.save_dir, "images", f"mlp_1d_{args.mode}_result.png")
         visualize_results(

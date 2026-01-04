@@ -63,6 +63,7 @@ class BatchNormalization(nn.Module):
             x_norm = (x - mean) / torch.sqrt(var + self.eps)
             return gamma * x_norm + beta
         return x
+    
 class LayerNormalization(nn.Module):
     """
     Implementation of Layer Normalization from scratch.
@@ -114,7 +115,13 @@ class RMSNormalization(nn.Module):
 
 if __name__ == "__main__":
     # Test Block
-    logging.basicConfig(level = logging.INFO, format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(
+        level = logging.INFO,
+        format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers = [logging.StreamHandler()],
+        datefmt = '%Y-%m-%d %H:%M:%S'
+    )
+    
     
     # 1. Test BatchNormalization (Manual vs PyTorch)
     # Input: (Batch=4, Features=8, Seq=2) -> using BatchNorm1d
@@ -133,6 +140,13 @@ if __name__ == "__main__":
     out_torch = bn_torch(x)
     
     diff = (out_manual - out_torch).abs().max()
+    logger.info(F"Manual Output Shape: {out_manual}")
+    logger.info(F"Torch Output Shape: {out_torch}")
+
+    logger.info(f"Manual  BatchNorm Output Mean (should be close to 0): {out_manual.mean().item():.4f}  ")
+    logger.info(f"Manual  BatchNorm Output Std (should be close to 1): {out_manual.std().item():.4f}  ")
+    logger.info(f"Torch  BatchNorm Output Mean (should be close to 0): {out_torch.mean().item():.4f}  ")
+    logger.info(f"Torch  BatchNorm Output Std (should be close to 1): {out_torch.std().item():.4f}  ")
     logger.info(f"BatchNorm Max Diff (Manual vs Torch): {diff.item():.6f}")
 
     # 2. Test LayerNormalization
