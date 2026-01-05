@@ -11,47 +11,62 @@ sys.path.append(os.getcwd())
 
 class StochasticGradientDescent(Optimizer):
     """
-    Implementation of SGD with Momentum.
-    """
-    def __init__(self, params, lr = 1e-3, momentum = 0.0):
-        defaults = dict(lr = lr, momentum = momentum)
-        super().__init__(params, defaults)
+    SGD with Momentum & L2 Regularization.
     
+    Update Rule (with L2):
+    g_t = g_t + weight_decay * theta_t  <-- L2 is coupled with Gradient
+    v_{t+1} = momentum * v_t + g_t
+    theta_{t+1} = theta_t - lr * v_{t+1}
+    """
+    def __init__(self, params, lr = 1e-3, momentum = 0.0, weight_decay = 0.0):
+        defaults = dict(lr = lr, momentum = momentum, weight_decay = weight_decay)
+        super().__init__(params, defaults)
+
     @torch.no_grad()
     def step(self, closure = None):
         loss = None
         if closure is not None:
             with torch.enable_grad():
                 loss = closure()
-        
+
         for group in self.param_groups:
             lr = group['lr']
             momentum = group['momentum']
-
+            weight_decay = group['weight_decay']
+            
             for p in group['params']:
                 if p.grad is None:
                     continue
-                    
-                grad = p.grad
-
-                # state initialization
+                
+                d_p = p.grad
+                
+                # --- Implementation of L2 Regularization ---
+                # Add (weight_decay * p) to the gradient
+                if weight_decay != 0:
+                    d_p = d_p.add(p, alpha = weight_decay)
+                
+                # Momentum Logic
                 state = self.state[p]
                 if 'momentum_buffer' not in state:
-                    buf = state['momentum_buffer'] = torch.clone(grad).detach()
+                    buf = state['momentum_buffer'] = torch.clone(d_p).detach()
                 else:
                     buf = state['momentum_buffer']
-                    # velocity update: v = momentum * v + g
-                    buf.mul_(momentum).add_(grad)
+                    buf.mul_(momentum).add_(d_p)
                 
-                # update: p = p - lr * v
+                # Update
                 p.add_(buf, alpha = -lr)
-        return loss
                 
+        return loss
+
 class AdaptiveMomentEstimationW(Optimizer):
     """
-    Implementation of AdamW (Adam with decoupled weight decay)
-    """ 
-    def __init__(self, params, lr = 1e-3, betas = (0.9, 0.999), eps = 1e-8, weight_decay = 1e-2):
+    AdamW: Adam with Decoupled Weight Decay.
+    
+    Update Rule:
+    1. Decay Weight: theta_t = theta_t - lr * weight_decay * theta_t
+    2. Standard Adam Step on theta_t using gradients (NOT modified by WD)
+    """
+    def __init__(self, params, lr = 1e-3, betas = (0.9, 0.999), eps = 1e-8, weight_decay = 0.01):
         defaults = dict(lr = lr, betas = betas, eps = eps, weight_decay = weight_decay)
         super().__init__(params, defaults)
 
@@ -61,48 +76,48 @@ class AdaptiveMomentEstimationW(Optimizer):
         if closure is not None:
             with torch.enable_grad():
                 loss = closure()
-        
+
         for group in self.param_groups:
             lr = group['lr']
             beta1, beta2 = group['betas']
             eps = group['eps']
-            weight_decay = group['weight_decay']
+            wd = group['weight_decay']
 
             for p in group['params']:
                 if p.grad is None:
                     continue
-                    
-                grad = p.grad
-
-                # 1.decoupled weight decay p = p * (1 - lr * weight_decay)
-                p.mul_(1 - lr * weight_decay)
+                
+                # --- Implementation of Decoupled Weight Decay ---
+                # Perform decay BEFORE gradient-based update
+                # Note: PyTorch implementation performs this simultaneously, result is same
+                if wd != 0:
+                    p.mul_(1 - lr * wd)
 
                 grad = p.grad
                 state = self.state[p]
 
+                # Init State
                 if len(state) == 0:
                     state['step'] = 0
                     state['exp_avg'] = torch.zeros_like(p)
                     state['exp_avg_sq'] = torch.zeros_like(p)
-                
+
                 exp_avg, exp_avg_sq = state['exp_avg'], state['exp_avg_sq']
                 state['step'] += 1
                 t = state['step']
 
-                # 2.momentum mean
+                # Adam Logic (Gradient NOT touched by Weight Decay)
                 exp_avg.mul_(beta1).add_(grad, alpha = 1 - beta1)
-                
-                # 3.rms variance
                 exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value = 1 - beta2)
 
-                # 4. bias correction
                 bias_corr1 = 1 - beta1 ** t
                 bias_corr2 = 1 - beta2 ** t
-
+                
                 step_size = lr / bias_corr1
+                denom = (exp_avg_sq.sqrt() / (bias_corr2 ** 0.5)).add_(eps)
 
-                denom = (exp_avg_sq.sqrt() / bias_corr2 ** 0.5).add_(eps)
-        
+                p.addcdiv_(exp_avg, denom, value = -step_size)
+
         return loss
 
 if __name__ == "__main__":

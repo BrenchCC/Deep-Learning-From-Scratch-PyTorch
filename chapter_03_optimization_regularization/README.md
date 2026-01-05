@@ -326,3 +326,182 @@ torch.nn.utils.clip_grad_norm_(
 
 optimizer.step()
 ```
+
+### 2.5 L1 vs L2 Regularization: 稀疏性与平滑性
+
+#### 学术阐述 (Academic Elaboration)
+L1 和 L2 正则化通过在损失函数 $J(\theta)$ 中添加一个与参数 $\theta$ 相关的惩罚项 $\Omega(\theta)$ 来限制模型的复杂度。
+* **L1 (Lasso)**: 惩罚参数的绝对值之和。它倾向于产生**稀疏解**（即许多参数变为 0），相当于引入了拉普拉斯分布（Laplace Distribution）的先验。
+* **L2 (Ridge)**: 惩罚参数的平方和。它倾向于产生**数值较小且分散的解**，防止单个特征对预测结果起决定性作用，相当于引入了高斯分布（Gaussian Distribution）的先验。
+
+#### 通俗解释 (Intuitive Explanation)
+* **L1 (激光手术)**: 就像一个极简主义的装修工。如果他觉得某个家具（特征）没大用，他会直接把它扔出去（系数置为0）。这对于特征选择非常有用。
+* **L2 (削峰填谷)**: 就像一个追求平均主义的老师。他不喜欢某个学生（特征）特别突出，也不希望有人完全不干活。他会把权重的力量平摊到大家身上，防止模型对某一个特征过分敏感。
+
+#### 数学推导 (Mathematical Derivation)
+
+总损失函数：
+$$
+\tilde{J}(\theta) = J(\theta) + \lambda \Omega(\theta)
+$$
+
+* **L1 Norm**: $\Omega(\theta) = \|\theta\|_1 = \sum |\theta_i|$
+    * 梯度（Subgradient）: $\lambda \cdot \text{sign}(\theta)$
+    * 更新包含一个常数项减法，容易让权重正好减到 0。
+
+* **L2 Norm**: $\Omega(\theta) = \frac{1}{2} \|\theta\|_2^2 = \frac{1}{2} \sum \theta_i^2$
+    * 梯度: $\lambda \cdot \theta$
+    * 更新表现为权重衰减（线性缩放）。
+
+#### 代码片段 (Snippet)
+
+```python
+# PyTorch 中的实现方式
+# L2 正则化通常直接通过 optimizer 的 weight_decay 参数实现
+# L1 正则化需要手动添加到 loss 中
+
+l1_lambda = 0.001
+l1_norm = sum(p.abs().sum() for p in model.parameters())
+loss = criterion(output, target) + l1_lambda * l1_norm
+```
+
+### 2.6 L2 Regularization $\neq$ Weight Decay (特别是在 Adam 中)
+
+这是现代深度学习中极易混淆但至关重要的概念，也是 **AdamW** 诞生的原因。
+
+#### 学术阐述 (Academic Elaboration)
+在标准 SGD 中，L2 正则化和 Weight Decay 在数学上是等价的。
+但在自适应梯度算法（如 Adam）中，它们**不等价**。
+* **L2 Regularization**: 将 $\lambda \theta$ 添加到梯度 $g_t$ 中。在 Adam 中，这个梯度会被二阶动量 $\sqrt{v_t}$ 归一化。这意味着，对于梯度变化大的参数，L2 的惩罚力度被无意中缩小了。
+* **Weight Decay (Decoupled)**: 无论梯度如何，直接在更新步骤中让权重衰减：
+
+$$
+\theta_{t+1} = (1 - \lambda \eta)\theta_t - \eta \cdot \text{AdamStep}
+$$
+
+#### 通俗解释 (Intuitive Explanation)
+* **L2 in Adam**: 就像你要给车减重（正则化）。你把减重的指令加到了“导航系统”（梯度）里。但是 Adam 的导航系统非常智能，它会根据路况（梯度方差）调整指令的强度。结果就是，原本想减重 1kg，经过 Adam 的调整，可能只减了 0.1kg，或者减了 10kg，完全乱套了。
+* **Weight Decay (AdamW)**: 不走导航系统。每次车子跑完一步，直接由机械师手动拧掉一颗螺丝。不管路况如何，减重是严格执行的。
+
+#### 数学推导 (Mathematical Derivation)
+
+**SGD 场景 (等价)**:
+
+$$
+\nabla_{total} = \nabla J + \lambda \theta
+$$
+
+$$
+\theta_{t+1} = \theta_t - \eta (\nabla J + \lambda \theta) = (1 - \eta\lambda)\theta_t - \eta \nabla J
+$$
+
+*(这里 $(1 - \eta\lambda)$ 就是 Weight Decay)*
+
+**Adam 场景 (L2 Regularization - 耦合)**:
+梯度被修改: $g_t' = g_t + \lambda \theta_t$
+Adam 更新:
+
+$$
+\theta_{t+1} = \theta_t - \eta \frac{M(g_t')}{\sqrt{V(g_t')} + \epsilon}
+$$
+
+*(正则化项 $\lambda \theta$ 被 $\sqrt{V}$ 缩放了，导致不同参数的正则化力度不一致)*
+
+**AdamW 场景 (Weight Decay - 解耦)**:
+1. 标准 Adam 更新:
+
+$$
+\theta_{temp} = \theta_t - \eta \frac{M(g_t)}{\sqrt{V(g_t)} + \epsilon}
+$$
+2. 独立衰减:
+
+$$
+\theta_{t+1} = \theta_{temp} - \eta \lambda \theta_t
+$$
+
+#### 简单与复杂示例 (Examples)
+
+* **Complex Example**:
+    在训练 Transformer 时，如果不使用 AdamW 而使用带 L2 的 Adam，模型往往很难收敛到最佳泛化性能。因为 Embedding 层的梯度通常很稀疏，而 Attention 层的梯度很密集，耦合的 L2 正则化会导致这两部分的权重衰减程度极度不平衡。
+
+---
+
+### 2.7 Stochastic Depth (随机深度)
+
+除了 Dropout (随机丢弃神经元)，在 ResNet 和 Transformer (如 Swin Transformer, ViT) 中，更常用的是**随机深度**。
+
+#### 学术阐述 (Academic Elaboration)
+Stochastic Depth（或 Drop Path）在训练过程中随机“跳过”整个残差块（Residual Block）。
+
+$$
+x_{l+1} = x_l + b_l \cdot f(x_l)
+$$
+
+其中 $b_l \in \{0, 1\}$ 是服从伯努利分布的随机变量。
+这使得网络的“有效深度”在训练时变浅，减少了梯度消失问题，同时在推理时使用了完整的深度（相当于隐式的模型集成）。
+
+#### 通俗解释 (Intuitive Explanation)
+* **训练时**: 像是在进行高强度的间歇跑。有时候你需要跑完全程（深层网络），有时候你可以抄近道（跳过某些层）。这迫使每一层都必须保证输出是有意义的，不能指望下一层来“修补”它的错误。
+* **推理时**: 你拥有了所有可能的路径组合，就像无数个不同深度的子网络在共同投票。
+
+#### 代码片段 (Snippet)
+
+```python
+def drop_path(x, drop_prob: float = 0., training: bool = False):
+    """
+    Stochastic Depth (Drop Path) implementation.
+    """
+    if drop_prob == 0. or not training:
+        return x
+    
+    keep_prob = 1 - drop_prob
+    # shape: (Batch_Size, 1, 1, ...) 广播机制
+    shape = (x.shape[0],) + (1,) * (x.ndim - 1)
+    
+    random_tensor = keep_prob + torch.rand(shape, device = x.device)
+    random_tensor.floor_() # binarize
+    
+    # 除以 keep_prob 是为了保持期望一致 (Inverted Dropout 思想)
+    output = x.div(keep_prob) * random_tensor
+    return output
+
+class ResidualBlock(nn.Module):
+    def forward(self, x):
+        # 这里的 drop_path 仅作用于残差分支
+        return x + drop_path(self.conv(x), self.drop_prob, self.training)
+```
+
+### 2.8 Label Smoothing (标签平滑)
+
+这是分类任务（包括 LLM 的 Next Token Prediction）中防止**过拟合**和**过度自信**的重要手段。
+
+#### 学术阐述 (Academic Elaboration)
+使用 One-hot 向量作为硬目标（Hard Target）训练时，Softmax 损失函数倾向于让正确类别的 Logit 趋近于无穷大，从而使概率趋近于 1。这会导致模型过度自信（Over-confidence），且缺乏泛化能力。
+Label Smoothing 将硬目标替换为硬目标和均匀分布的加权混合。
+
+#### 数学推导 (Mathematical Derivation)
+
+原始 One-hot 目标 $y$:
+
+$$
+y_k = \begin{cases} 1 & \text{if } k = \text{target} \\ 0 & \text{if } k \neq \text{target} \end{cases}
+$$
+
+平滑后的目标 $y^{LS}$:
+
+$$
+y^{LS}_k = (1 - \epsilon) y_k + \frac{\epsilon}{K}
+$$
+
+其中 $\epsilon$ 是平滑因子（如 0.1），$K$ 是类别总数（词表大小）。
+
+#### 简单与复杂示例 (Examples)
+
+* **Simple Example**:
+    三分类任务，Target=0。
+    One-hot: `[1, 0, 0]`
+    Label Smoothing ($\epsilon=0.1$): `[0.933, 0.033, 0.033]`
+    模型不需要把概率推到极致的 1.0，只要显著高于 0.033 即可。
+
+* **Complex Example (LLM)**:
+    在训练 GPT 时，词表大小 $V=50000$。如果我们完全相信训练数据中的下一个词是唯一的真理，模型可能会死记硬背。加入 Label Smoothing 相当于告诉模型：“虽然这个词出现的概率最大，但其他词也不是完全不可能的”。这有助于模型生成更多样化的文本，并减少“重复生成”的怪圈。
