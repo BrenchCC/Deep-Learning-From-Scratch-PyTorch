@@ -1,6 +1,7 @@
-import sys
 import os
+import sys
 import logging
+
 import torch
 import torch.nn as nn
 import numpy as np
