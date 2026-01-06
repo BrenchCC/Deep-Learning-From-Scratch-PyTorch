@@ -68,13 +68,15 @@
     * 空洞卷积（Atrous Convolution）。在卷积核元素之间插入空格，用于在不增加参数量的情况下扩大感受野。
 6.  **`groups` ($g$)**：
     * 分组卷积。默认 $g=1$（全连接卷积）。
-    * 当 $g = \text{in\_channels} = \text{out\_channels}$ 时，为 **Depthwise Convolution**（如 MobileNet），每个通道独立卷积，极大降低参数量。
+    * 当 $g = \text{in\\_channels} = \text{out\\_channels}$ 时，为 **Depthwise Convolution**（如 MobileNet），每个通道独立卷积，极大降低参数量。
 
 ### 2.2 维度变化公式 (Dimension Arithmetic)
 
 对于输入维度 $(N, C_{in}, H_{in}, W_{in})$，经过 `Conv2d` 后输出 $(N, C_{out}, H_{out}, W_{out})$：
 
-$$ H_{out} = \lfloor \frac{H_{in} + 2 \times \text{padding}[0] - \text{dilation}[0] \times (\text{kernel\_size}[0] - 1) - 1}{\text{stride}[0]} + 1 \rfloor $$
+$$ 
+H_{out} = \lfloor \frac{H_{in} + 2 \times \text{padding}[0] - \text{dilation}[0] \times (\text{kernel\\_size}[0] - 1) - 1}{\text{stride}[0]} + 1 \rfloor 
+$$
 
 *注：$W_{out}$ 的计算同理。*
 
@@ -137,6 +139,7 @@ O_{0,0} &= (1 \times 1) + (1 \times 0) + (1 \times 1) \\
         &= 4
 \end{aligned}
 $$
+
 输出尺寸计算：$(5 - 3) / 1 + 1 = 3$，故输出为 $3 \times 3$ 矩阵。
 
 ### 3.2 Complex Example: 多通道工程化计算
@@ -164,7 +167,7 @@ $$
 
 $$
 \begin{aligned}
-\text{Params} &= (\text{kernel\_h} \times \text{kernel\_w} \times \text{in\_channels}) \times \text{out\_channels} + \text{bias} \\
+\text{Params} &= (\text{kernel\\_h} \times \text{kernel\\_w} \times \text{in\\_channels}) \times \text{out\\_channels} + \text{bias} \\
               &= (3 \times 3 \times 3) \times 16 + 16 \\
               &= 27 \times 16 + 16 \\
               &= 432 + 16 = 448
