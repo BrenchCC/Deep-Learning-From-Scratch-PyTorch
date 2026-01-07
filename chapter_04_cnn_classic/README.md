@@ -210,3 +210,89 @@ def calculate_cnn_layer_info():
 
 # This fits your preference for clear, verifiable logic.
 ```
+
+## 4. 理论补充与进阶 (Theory Supplement)
+
+### 4.1 归纳偏置：等变性与不变性 (Inductive Bias: Equivariance vs Invariance)
+
+* **学术阐述**：
+    CNN 的强大来源于其特定的归纳偏置（Inductive Bias）。我们需要区分 **平移等变性 (Translation Equivariance)** 和 **平移不变性 (Translation Invariance)**。
+    * **卷积层是平移等变的**：若输入 $f(x)$ 移动了 $\Delta$，输出 $g(x)$ 也会移动相同的 $\Delta$。即 $f(x - \Delta) * w = g(x - \Delta)$。这意味着卷积层能保留目标的“位置信息”。
+    * **池化层是近似平移不变的**：若输入发生微小位移，Max Pooling 的输出可能保持不变。这意味着网络对输入的微小扰动具有鲁棒性。
+
+* **通俗解释**：
+    * **等变性**：照片里的猫从左移到右，卷积提取出的“猫特征图”也会跟着从左移到右。位置对应关系没丢。
+    * **不变性**：照片里的猫稍微歪了一点点头，或者手抖了一点，Max Pooling 选出来的最大值（最显著特征）还是那个耳朵，输出结果没变。
+
+### 4.2 1x1 卷积的特殊意义 (The Power of 1x1 Convolution)
+
+* **学术阐述**：
+    当 $k=1$ 时，卷积退化为对每个像素位置在 **通道维度 (Channel Dimension)** 上的全连接层（FC）。
+    $$Out_{x,y} = W \cdot In_{x,y} + b$$
+    它不改变空间尺寸 $(H, W)$，只改变通道数 $C$。它是实现 **Cross-channel Information Interaction（跨通道信息交互）** 和 **Dimension Reduction（降维/升维）** 的核心手段（如 Inception 的 Bottleneck 结构）。
+
+* **简单例子**：
+    你有一张 $64 \times 64$ 的图片，有 100 个特征通道（比如颜色、纹理、边缘等）。你想把这 100 个特征融合并压缩成 10 个最关键的特征，但保持图片大小不变。
+    * 使用 `kernel_size=1, in=100, out=10` 的卷积，相当于对每一个像素点，做了一次 `100 -> 10` 的线性变换。
+
+### 4.3 Im2Col：卷积的工程化实现 (The Arithmetic Theory of Implementation)
+
+这是我们后续手写代码时，为了避免写 4 层 `for` 循环（极慢）而必须掌握的矩阵化理论。
+
+* **核心逻辑**：
+    计算机对大矩阵乘法（GEMM）有极致优化，对滑动窗口循环没有优化。因此，我们将“滑动窗口”展开成“行”，将卷积核展开成“列”。
+
+* **数学推导 (GitHub 兼容)**：
+    假设 Input 是 $C \times H \times W$，Kernel 是 $K \times C \times k \times k$。
+    
+    1.  **Unroll Input (Im2Col)**:
+        将输入图像中每一个滑动窗口覆盖的 $C \times k \times k$ 个像素拉直成一行。
+        若输出特征图大小为 $H_{out} \times W_{out}$，则生成矩阵 $X_{col}$ 维度为：
+        $$(H_{out} \cdot W_{out}) \times (C \cdot k \cdot k)$$
+    
+    2.  **Flatten Weights**:
+        将 $K$ 个卷积核拉直成列。生成矩阵 $W_{row}$ 维度为：
+        $$(C \cdot k \cdot k) \times K$$
+    
+    3.  **Matrix Multiplication**:
+        $$Y_{col} = X_{col} \times W_{row}$$
+        结果 $Y_{col}$ 维度为 $(H_{out} \cdot W_{out}) \times K$。
+    
+    4.  **Reshape**:
+        将 $Y_{col}$ 重塑回 $(K, H_{out}, W_{out})$。
+
+* **简单的代码逻辑 (Snippet)**:
+    ```python
+    # Pseudo-code for Im2Col perspective
+    # This explains why strict shape control is needed
+    
+    # 1. Input: [Batch, C, H, W]
+    # 2. Unfold (Im2Col): Extract sliding blocks
+    #    Output shape: [Batch, C*k*k, L], where L is num_blocks
+    input_unfolded = torch.nn.functional.unfold(input, kernel_size=3)
+    
+    # 3. Matrix Multiplcation: Weights * Unfolded_Input
+    #    Weights shape: [Out_Channels, In_Channels*k*k]
+    #    This is essentially a Linear Layer applied to local patches
+    output_flat = weight_mat @ input_unfolded 
+    
+    # 4. Fold: Reshape back to [Batch, Out_Channels, H_out, W_out]
+    ```
+
+---
+
+## 5. 章节总结 (Chapter Summary)
+
+至此，我们完成了 Chapter 04 的理论构建。以下是您作为算法工程师必须烙印在脑海中的核心要点：
+
+1.  **操作本质**：深度学习中的卷积本质上是**互相关（Cross-correlation）**，利用**局部连接**和**权值共享**极大地压缩了参数量，适合处理网格化数据（Grid-like Data）。
+2.  **空间计算**：
+    * **感受野**决定了网络看图的范围，层数越深看得越广。
+    * **Padding** 维持尺寸，**Stride** 进行降采样。
+    * **输出尺寸公式**：$H_{out} = \lfloor \frac{H_{in} + 2p - k}{s} + 1 \rfloor$。
+3.  **特征变换**：
+    * **卷积层**负责提取特征（具有平移等变性）。
+    * **池化层**负责压缩信息和提供鲁棒性（具有平移不变性）。
+    * **1x1 卷积**负责通道融合与维数调整。
+4.  **工程实现**：
+    * 实际底层计算并非滑动窗口，而是通过 **Im2Col + GEMM** 转换为矩阵乘法加速。这解释了为什么显存占用不仅与参数量有关，还与展开后的中间矩阵大小强相关。
