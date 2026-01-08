@@ -88,11 +88,14 @@ python -c "import torch; print(f'PyTorch version: {torch.__version__}')"
 ### 进阶篇
 
 #### [Chapter 04: 经典CNN](chapter_04_cnn_classic/) ✅
-- **核心内容**：卷积神经网络原理、经典CNN架构
-- **关键技术**：卷积操作、池化层、LeNet、AlexNet、VGG
-- **应用场景**：图像分类、目标检测、图像分割
+- **核心内容**：卷积神经网络原理、卷积与互相关的数学定义、局部连接与权值共享机制、感受野计算
+- **关键技术**：卷积操作、池化层、BatchNorm、CNN架构设计、特征图可视化
+- **应用场景**：图像分类、目标检测、特征提取、可视化理解
 - **代码实现**：
   - [卷积数学演示](chapter_04_cnn_classic/demo_conv_math.py)
+  - [CNN模型实现](chapter_04_cnn_classic/model.py)
+  - [CIFAR-10训练](chapter_04_cnn_classic/train.py)
+  - [图像推理与可视化](chapter_04_cnn_classic/inference.py)
 
 #### [Chapter 05: ResNet与现代CNN](chapter_05_resnet_modern_cnn/) 🚧
 - **核心内容**：残差连接、深度网络训练、现代CNN架构
@@ -173,6 +176,10 @@ python exp_normalization.py
 cd chapter_04_cnn_classic
 # 运行卷积数学演示
 python demo_conv_math.py
+# 训练CNN模型（CIFAR-10数据集）
+python train.py --epochs 100 --batch_size 128 --lr 0.001
+# 对自定义图像进行推理并可视化特征图
+python inference.py --img_dir ./data/custom_imgs --model_path ./results/best_model.pth
 ```
 
 ## 📊 项目进度
@@ -182,7 +189,7 @@ python demo_conv_math.py
 | Chapter 01: 计算图与自动微分 | ✅ 已完成 | 100% | 包含自动微分示例和图可视化 |
 | Chapter 02: 万能逼近器（MLP） | ✅ 已完成 | 100% | 包含三种实验模式和预训练模型 |
 | Chapter 03: 优化与正则化 | ✅ 已完成 | 100% | 包含优化器、正则化和标准化实验 |
-| Chapter 04: 经典CNN | ✅ 已完成 | 100% | 包含卷积数学演示 |
+| Chapter 04: 经典CNN | ✅ 已完成 | 100% | 包含卷积数学演示、CNN模型实现、CIFAR-10训练和推理可视化 |
 | Chapter 05: ResNet与现代CNN | 🚧 规划中 | 0% | 待开发 |
 | Chapter 06: RNN系列 | 🚧 规划中 | 0% | 待开发 |
 | Chapter 07: 注意力机制 | 🚧 规划中 | 0% | 待开发 |
