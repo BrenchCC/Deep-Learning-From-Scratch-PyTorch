@@ -132,3 +132,5 @@ if __name__ == "__main__":
     logger.info(f"Output probabilities: {output_probs}")
     output_classes = torch.argmax(output_probs, dim = 1)
     logger.info(f"Predicted class: {output_classes.item()}")
+
+    

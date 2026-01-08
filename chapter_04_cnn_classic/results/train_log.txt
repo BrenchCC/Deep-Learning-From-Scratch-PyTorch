@@ -1,0 +1,47 @@
+2026-01-09 01:11:37,148 - TrainCIFAR - INFO - Using device: mps
+2026-01-09 01:11:37,148 - TrainCIFAR - INFO - Hyperparameters: {'epochs': 10, 'batch_size': 128, 'lr': 0.001, 'seed': 42, 'data_dir': './chapter_04_cnn_classic/data', 'save_dir': './chapter_04_cnn_classic/results'}
+2026-01-09 01:18:43,930 - TrainCIFAR - INFO - Classes: ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+2026-01-09 01:18:44,014 - TrainCIFAR - INFO - Starting training...
+2026-01-09 01:19:16,393 - TrainCIFAR - INFO - Epoch 1/10 - Train Loss: 1.4969 Acc: 44.94% | Val Loss: 1.1401 Acc: 58.41%
+2026-01-09 01:19:16,444 - TrainCIFAR - INFO - New best model saved with Acc: 58.41%
+2026-01-09 01:19:45,709 - TrainCIFAR - INFO - Epoch 2/10 - Train Loss: 1.1805 Acc: 57.65% | Val Loss: 0.9590 Acc: 65.46%
+2026-01-09 01:19:45,738 - TrainCIFAR - INFO - New best model saved with Acc: 65.46%
+2026-01-09 01:20:14,928 - TrainCIFAR - INFO - Epoch 3/10 - Train Loss: 1.0483 Acc: 62.64% | Val Loss: 0.8962 Acc: 67.91%
+2026-01-09 01:20:14,958 - TrainCIFAR - INFO - New best model saved with Acc: 67.91%
+2026-01-09 01:20:44,169 - TrainCIFAR - INFO - Epoch 4/10 - Train Loss: 0.9623 Acc: 65.96% | Val Loss: 0.8720 Acc: 69.68%
+2026-01-09 01:20:44,198 - TrainCIFAR - INFO - New best model saved with Acc: 69.68%
+2026-01-09 01:21:13,522 - TrainCIFAR - INFO - Epoch 5/10 - Train Loss: 0.9078 Acc: 68.01% | Val Loss: 0.8358 Acc: 70.60%
+2026-01-09 01:21:13,554 - TrainCIFAR - INFO - New best model saved with Acc: 70.60%
+2026-01-09 01:21:43,106 - TrainCIFAR - INFO - Epoch 6/10 - Train Loss: 0.8671 Acc: 69.63% | Val Loss: 0.7246 Acc: 74.18%
+2026-01-09 01:21:43,122 - TrainCIFAR - INFO - New best model saved with Acc: 74.18%
+2026-01-09 01:22:12,777 - TrainCIFAR - INFO - Epoch 7/10 - Train Loss: 0.8290 Acc: 71.04% | Val Loss: 0.7123 Acc: 74.84%
+2026-01-09 01:22:12,841 - TrainCIFAR - INFO - New best model saved with Acc: 74.84%
+2026-01-09 01:22:42,375 - TrainCIFAR - INFO - Epoch 8/10 - Train Loss: 0.7959 Acc: 72.39% | Val Loss: 0.6810 Acc: 76.07%
+2026-01-09 01:22:42,392 - TrainCIFAR - INFO - New best model saved with Acc: 76.07%
+2026-01-09 01:23:12,114 - TrainCIFAR - INFO - Epoch 9/10 - Train Loss: 0.7633 Acc: 73.50% | Val Loss: 0.6738 Acc: 76.51%
+2026-01-09 01:23:12,149 - TrainCIFAR - INFO - New best model saved with Acc: 76.51%
+2026-01-09 01:23:41,409 - TrainCIFAR - INFO - Epoch 10/10 - Train Loss: 0.7383 Acc: 74.36% | Val Loss: 0.7012 Acc: 74.90%
+2026-01-09 01:32:55,454 - TrainCIFAR - INFO - Using device: mps
+2026-01-09 01:32:55,454 - TrainCIFAR - INFO - Hyperparameters: {'epochs': 10, 'batch_size': 128, 'lr': 0.001, 'seed': 42, 'data_dir': './chapter_04_cnn_classic/data', 'save_dir': './chapter_04_cnn_classic/results'}
+2026-01-09 01:32:56,638 - TrainCIFAR - INFO - Classes: ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+2026-01-09 01:32:56,665 - TrainCIFAR - INFO - Starting training...
+2026-01-09 01:33:26,555 - TrainCIFAR - INFO - Epoch 1/10 - Train Loss: 1.4969 Acc: 44.94% | Val Loss: 1.1401 Acc: 58.41%
+2026-01-09 01:33:26,571 - TrainCIFAR - INFO - New best model saved with Acc: 58.41%
+2026-01-09 01:33:55,935 - TrainCIFAR - INFO - Epoch 2/10 - Train Loss: 1.1805 Acc: 57.65% | Val Loss: 0.9590 Acc: 65.46%
+2026-01-09 01:33:55,966 - TrainCIFAR - INFO - New best model saved with Acc: 65.46%
+2026-01-09 01:34:25,332 - TrainCIFAR - INFO - Epoch 3/10 - Train Loss: 1.0483 Acc: 62.64% | Val Loss: 0.8962 Acc: 67.91%
+2026-01-09 01:34:25,380 - TrainCIFAR - INFO - New best model saved with Acc: 67.91%
+2026-01-09 01:34:55,020 - TrainCIFAR - INFO - Epoch 4/10 - Train Loss: 0.9623 Acc: 65.96% | Val Loss: 0.8720 Acc: 69.68%
+2026-01-09 01:34:55,051 - TrainCIFAR - INFO - New best model saved with Acc: 69.68%
+2026-01-09 01:35:24,431 - TrainCIFAR - INFO - Epoch 5/10 - Train Loss: 0.9078 Acc: 68.01% | Val Loss: 0.8358 Acc: 70.60%
+2026-01-09 01:35:24,462 - TrainCIFAR - INFO - New best model saved with Acc: 70.60%
+2026-01-09 01:35:54,059 - TrainCIFAR - INFO - Epoch 6/10 - Train Loss: 0.8671 Acc: 69.63% | Val Loss: 0.7246 Acc: 74.18%
+2026-01-09 01:35:54,090 - TrainCIFAR - INFO - New best model saved with Acc: 74.18%
+2026-01-09 01:36:23,460 - TrainCIFAR - INFO - Epoch 7/10 - Train Loss: 0.8290 Acc: 71.04% | Val Loss: 0.7123 Acc: 74.84%
+2026-01-09 01:36:23,492 - TrainCIFAR - INFO - New best model saved with Acc: 74.84%
+2026-01-09 01:36:53,070 - TrainCIFAR - INFO - Epoch 8/10 - Train Loss: 0.7959 Acc: 72.39% | Val Loss: 0.6810 Acc: 76.07%
+2026-01-09 01:36:53,101 - TrainCIFAR - INFO - New best model saved with Acc: 76.07%
+2026-01-09 01:37:22,605 - TrainCIFAR - INFO - Epoch 9/10 - Train Loss: 0.7633 Acc: 73.50% | Val Loss: 0.6738 Acc: 76.51%
+2026-01-09 01:37:22,636 - TrainCIFAR - INFO - New best model saved with Acc: 76.51%
+2026-01-09 01:37:52,272 - TrainCIFAR - INFO - Epoch 10/10 - Train Loss: 0.7383 Acc: 74.36% | Val Loss: 0.7012 Acc: 74.90%
+2026-01-09 01:37:52,272 - TrainCIFAR - INFO - Training completed, Best Acc: 76.51%
