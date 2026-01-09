@@ -82,18 +82,24 @@ def get_data_loaders(data_root: str, batch_size: int):
         download = True, 
         transform = test_transform
     )
-    
+
+
     train_loader = DataLoader(
         train_set, 
         batch_size = batch_size, 
         shuffle = True, 
-        num_workers = 2
+        num_workers = 4,          
+        pin_memory = True,       
+        persistent_workers = True 
     )
+
     test_loader = DataLoader(
         test_set, 
         batch_size = batch_size, 
         shuffle = False, 
-        num_workers = 2
+        num_workers = 4,
+        pin_memory = True,
+        persistent_workers = True
     )
     
     return train_loader, test_loader, train_set.classes
@@ -201,6 +207,12 @@ def main():
         lr = args.lr, 
         weight_decay = 1e-4
     )
+
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, 
+        T_max = args.epochs,      # Maximum number of iterations
+        eta_min = 1e-6            # Minimum learning rate
+    )
     
     # Training Loop
     logger.info("Starting training...")
@@ -216,7 +228,11 @@ def main():
                 device = device,
                 epoch_idx = epoch
             )
-            
+
+            scheduler.step()
+            current_lr = scheduler.get_last_lr()[0]
+            logger.info(f"Epoch {epoch} LR: {current_lr:.6f}")
+                    
             val_loss, val_acc = evaluate(
                 model = model,
                 loader = test_loader,

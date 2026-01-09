@@ -235,7 +235,25 @@ def calculate_cnn_layer_info():
     你有一张 $64 \times 64$ 的图片，有 100 个特征通道（比如颜色、纹理、边缘等）。你想把这 100 个特征融合并压缩成 10 个最关键的特征，但保持图片大小不变。
     * 使用 `kernel_size=1, in=100, out=10` 的卷积，相当于对每一个像素点，做了一次 `100 -> 10` 的线性变换。
 
-### 4.3 Im2Col：卷积的工程化实现 (The Arithmetic Theory of Implementation)
+### 4.3 批归一化 (Batch Normalization)
+在 `model.py` 中使用了 `nn.BatchNorm2d`，这是现代 CNN 能训练深层的关键。
+
+* **为什么需要 BN？**
+    在训练过程中，参数的变化会导致每一层输入的分布发生变化（Internal Covariate Shift）。这迫使网络使用较小的学习率，且对初始化非常敏感。BN 强制将每一层的输入拉回到均值为 0、方差为 1 的分布。
+
+* **数学公式 (Training Phase)**：
+    对于一个 Batch $B = \{x_1, \dots, x_m\}$：
+    1.  **计算均值**：$\mu_B = \frac{1}{m}\sum_{i=1}^m x_i$
+    2.  **计算方差**：$\sigma_B^2 = \frac{1}{m}\sum_{i=1}^m (x_i - \mu_B)^2$
+    3.  **归一化**：$\hat{x}_i = \frac{x_i - \mu_B}{\sqrt{\sigma_B^2 + \epsilon}}$
+    4.  **缩放与平移 (Scale and Shift)**：$y_i = \gamma \hat{x}_i + \beta$
+    
+    *注意：$\gamma$ 和 $\beta$ 是可学习参数，允许网络恢复原始分布特征。*
+
+* **Inference Phase**：
+    推理时不再计算 Batch 的统计量，而是使用训练期间记录的 **Running Mean** 和 **Running Variance**。
+
+### 4.4 Im2Col：卷积的工程化实现 (The Arithmetic Theory of Implementation)
 
 这是我们后续手写代码时，为了避免写 4 层 `for` 循环（极慢）而必须掌握的矩阵化理论。
 
@@ -290,7 +308,7 @@ def calculate_cnn_layer_info():
     * **感受野**决定了网络看图的范围，层数越深看得越广。
     * **Padding** 维持尺寸，**Stride** 进行降采样。
     * **输出尺寸公式**：
-    
+
 $$ 
 H_{out} = \lfloor \frac{H_{in} + 2p - k}{s} + 1 \rfloor
 $$
