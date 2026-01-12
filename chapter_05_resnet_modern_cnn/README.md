@@ -196,7 +196,6 @@ import torch
 import torch.nn as nn
 from utils import count_parameters
 
-# Define logger name but do not configure handlers here
 logger = logging.getLogger("Chapter05_Theory_Examples")
 
 def theory_comparison():
@@ -257,7 +256,6 @@ def theory_comparison():
     logger.info("allowing ResNets to be much deeper (e.g., 152 layers) than VGG (19 layers) with similar computational cost.")
 
 if __name__ == "__main__":
-    # Configure logging strictly in main as per user preference
     logging.basicConfig(
         level = logging.INFO,
         format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -265,4 +263,78 @@ if __name__ == "__main__":
     )
     
     theory_comparison()
+```
+
+## 5. 进阶理论补充 (Advanced Theoretical Insights)
+
+为了让我们的 `Deep-Learning-From-Scratch-PyTorch` 项目具备业界水准，我们需要理解 ResNet 在原始论文发表后的一些关键工程改进。
+
+### 5.1 ResNet V1 vs. ResNet V2 (Pre-activation)
+
+我们之前推导的是原始 ResNet (V1) 的公式：$y = \sigma(F(x) + x)$。
+但在后续的论文《Identity Mappings in Deep Residual Networks》中，He KaiMing 提出了 **ResNet V2**。
+
+* **区别**：
+    * **V1 (Post-activation)**: `Conv -> BN -> ReLU -> ... -> Add -> ReLU`。最后的 ReLU 在相加**之后**。
+    * **V2 (Pre-activation)**: `BN -> ReLU -> Conv -> ... -> Add`。激活函数放在了卷积**之前**。
+* **优势**：
+    * V2 将残差单元重写为 $x_{l+1} = x_l + F(\hat{x}_l)$，这使得梯度流更加纯净。
+    * 在 V1 中，最后的 ReLU 强制输出非负，这限制了信息的表达；V2 移除了主路径（Highway）上的非线性变换，梯度能更顺畅地传导至第一层。
+* **工程选择**：虽然 V2 理论更优，但标准 `torchvision.models.resnet` 实现依然默认使用 **V1**，因为它在标准数据集上表现已经足够好且更容易迁移。我们将遵循 V1 标准以保持与生态兼容。
+
+### 5.2 全局平均池化 (Global Average Pooling, GAP)
+
+回顾 VGG 到 ResNet 的进化，有一个巨大的参数量缩减往往被忽略：**分类头的设计**。
+
+* **VGG 方式**：Flatten -> FC (4096) -> FC (4096) -> FC (1000)。
+    * 仅第一个 FC 层参数量就高达 $7 \times 7 \times 512 \times 4096 \approx 102M$。
+* **ResNet 方式 (GAP)**：
+    * 在进入分类头之前，输出特征图大小通常为 $7 \times 7 \times 2048$ (ResNet50)。
+    * ResNet 直接对 $7 \times 7$ 的空间维度求**平均值**，得到 $1 \times 1 \times 2048$ 的向量。
+    * 然后再接一个全连接层 $2048 \to 1000$。
+* **意义**：
+    * 大幅减少了参数量（防止过拟合）。
+    * 使得网络可以接受**任意尺寸**的图片输入（因为 GAP 总是输出 $1 \times 1$），不再受限于固定的 Flatten 维度。
+
+### 5.3 零初始化技巧 (Zero Gamma Initialization)
+
+在工程实现中（特别是 PyTorch 官方实现），有一个非常实用的 Trick 涉及到 Batch Normalization 的权重初始化。
+
+* **原理**：
+    对于残差块 $x_{out} = \text{ReLU}(x_{in} + F(x_{in}))$，最后一层通常是 BN。
+    BN 的运算为 $y = \gamma \hat{x} + \beta$。
+* **操作**：
+    将残差分支中**最后一个 BN 层**的权重 $\gamma$ 初始化为 **0** (默认为 1)。
+* **效果**：
+    * 初始化时，$\gamma=0$ 导致 $F(x_{in}) \approx 0$。
+    * 此时 $x_{out} \approx \text{ReLU}(x_{in})$，整个网络在初始阶段退化为**恒等映射 (Identity Mapping)**。
+    * 这使得信号在初始阶段可以无损地穿过深层网络，极大地加速了模型收敛，就像是在浅层网络上训练一样。
+
+---
+
+### 补充代码 Snippet：ResNet 权重初始化
+
+在后续的代码实现阶段，我们将把这个初始化逻辑加入到我们的模型中：
+
+```python
+# Snippet for Chapter 05 Implementation
+# 这个函数将在后续完整的 Model 定义中使用
+
+def resnet_weight_init(m):
+    """
+    Standard ResNet initialization with Zero-Gamma trick.
+    """
+    if isinstance(m, nn.Conv2d):
+        # Kaiming Normal for Conv layers (He Initialization)
+        nn.init.kaiming_normal_(m.weight, mode = 'fan_out', nonlinearity = 'relu')
+    elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+        # Standard BN initialization
+        nn.init.constant_(m.weight, 1)
+        nn.init.constant_(m.bias, 0)
+
+# 注意：Zero-Gamma 需要在模型构建完成后，手动对特定层的 BN 进行覆盖
+# 我们将在 ResNet 类的方法中实现这一点：
+# for m in self.modules():
+#     if isinstance(m, Bottleneck):
+#         nn.init.constant_(m.bn3.weight, 0)  # Last BN in Bottleneck
 ```
