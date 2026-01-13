@@ -58,10 +58,10 @@ def conv2d_v1(input_tensor, kernel_weight, bias = 0):
 
 def main():
     logging.basicConfig(
-            level = logging.INFO,
-            format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers = [logging.StreamHandler()]
-        )
+        level = logging.INFO,
+        format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers = [logging.StreamHandler()]
+    )
         
     logger.info("Starting Manual Convolution Demo...")
 
