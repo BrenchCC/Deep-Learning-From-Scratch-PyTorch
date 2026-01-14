@@ -97,11 +97,14 @@ python -c "import torch; print(f'PyTorch version: {torch.__version__}')"
   - [CIFAR-10训练](chapter_04_cnn_classic/train.py)
   - [图像推理与可视化](chapter_04_cnn_classic/inference.py)
 
-#### [Chapter 05: ResNet与现代CNN](chapter_05_resnet_modern_cnn/) 🚧
-- **核心内容**：残差连接、深度网络训练、现代CNN架构
-- **关键技术**：ResNet、DenseNet、EfficientNet、MobileNet
-- **应用场景**：深度模型训练、移动端部署、高效特征提取
-- **状态**：规划中
+#### [Chapter 05: ResNet与现代CNN](chapter_05_resnet_modern_cnn/) ✅
+- **核心内容**：残差连接原理、退化问题解决方案、现代CNN架构演进
+- **关键技术**：ResNet残差块、Bottleneck结构、Shortcut连接、深度网络训练技巧
+- **应用场景**：深度模型训练、图像分类、特征提取、网络架构设计
+- **代码实现**：
+  - [ResNet模型实现](chapter_05_resnet_modern_cnn/src/model.py)
+  - [STL-10数据集处理](chapter_05_resnet_modern_cnn/src/dataset.py)
+  - [ResNet训练与对比实验](chapter_05_resnet_modern_cnn/src/model_train.py)
 
 #### [Chapter 06: RNN系列](chapter_06_rnn_lstm_seq/) 🚧
 - **核心内容**：循环神经网络原理、序列建模技术
@@ -142,44 +145,49 @@ python -c "import torch; print(f'PyTorch version: {torch.__version__}')"
 
 ### Chapter 01: 计算图与自动微分
 ```bash
-cd chapter_01_tensor_autograd
 # 查看自动微分示例
-python autograd.py
+python chapter_01_tensor_autograd/autograd.py
 # 生成计算图可视化
-python graph_visualization.py
+python chapter_01_tensor_autograd/graph_visualization.py
 ```
 
 ### Chapter 02: 万能逼近器（MLP）
 ```bash
-cd chapter_02_nn_basics_mlp
 # 运行MLP示例（三种模式：standard, 2d_surface, extrapolate）
-python mlp.py --mode standard
+python chapter_02_nn_basics_mlp/mlp.py --mode standard
 # 运行2D表面拟合
-python mlp.py --mode 2d_surface
+python chapter_02_nn_basics_mlp/mlp.py --mode 2d_surface
 # 运行外推实验
-python mlp.py --mode extrapolate
+python chapter_02_nn_basics_mlp/mlp.py --mode extrapolate
 ```
 
 ### Chapter 03: 优化与正则化
 ```bash
-cd chapter_03_optimization_regularization
 # 比较不同优化器性能
-python exp_optimization.py
+python chapter_03_optimization_regularization/exp_optimization.py
 # 比较不同正则化技术
-python exp_regularization.py
+python chapter_03_optimization_regularization/exp_regularization.py
 # 比较不同标准化技术
-python exp_normalization.py
+python chapter_03_optimization_regularization/exp_normalization.py
 ```
 
 ### Chapter 04: 经典CNN
 ```bash
-cd chapter_04_cnn_classic
 # 运行卷积数学演示
-python demo_conv_math.py
+python chapter_04_cnn_classic/demo_conv_math.py
 # 训练CNN模型（CIFAR-10数据集）
-python train.py --epochs 100 --batch_size 128 --lr 0.001
+python chapter_04_cnn_classic/train.py --epochs 100 --batch_size 128 --lr 0.001
 # 对自定义图像进行推理并可视化特征图
-python inference.py --img_dir ./data/custom_imgs --model_path ./results/best_model.pth
+python chapter_04_cnn_classic/inference.py --img_dir ./chapter_04_cnn_classic/data/custom_imgs --model_path ./chapter_04_cnn_classic/results/best_model.pth
+```
+
+### Chapter 05: ResNet与现代CNN
+```bash
+# 训练ResNet-18模型（STL-10数据集）
+python chapter_05_resnet_modern_cnn/src/model_train.py --epochs 100 --batch_size 64 --lr 0.1
+# 对比ResNet与PlainNet性能
+python chapter_05_resnet_modern_cnn/src/model_train.py --model_type resnet --epochs 100 --batch_size 64 --lr 0.1
+python chapter_05_resnet_modern_cnn/src/model_train.py --model_type plainnet --epochs 100 --batch_size 64 --lr 0.1
 ```
 
 ## 📊 项目进度
@@ -190,7 +198,7 @@ python inference.py --img_dir ./data/custom_imgs --model_path ./results/best_mod
 | Chapter 02: 万能逼近器（MLP） | ✅ 已完成 | 100% | 包含三种实验模式和预训练模型 |
 | Chapter 03: 优化与正则化 | ✅ 已完成 | 100% | 包含优化器、正则化和标准化实验 |
 | Chapter 04: 经典CNN | ✅ 已完成 | 100% | 包含卷积数学演示、CNN模型实现、CIFAR-10训练和推理可视化 |
-| Chapter 05: ResNet与现代CNN | 🚧 规划中 | 0% | 待开发 |
+| Chapter 05: ResNet与现代CNN | ✅ 已完成 | 100% | 包含ResNet模型实现、STL-10数据集处理和ResNet与PlainNet对比实验 |
 | Chapter 06: RNN系列 | 🚧 规划中 | 0% | 待开发 |
 | Chapter 07: 注意力机制 | 🚧 规划中 | 0% | 待开发 |
 | Chapter 08: 原始Transformer | 🚧 规划中 | 0% | 待开发 |
