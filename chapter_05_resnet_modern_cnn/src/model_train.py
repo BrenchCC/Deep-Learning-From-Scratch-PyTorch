@@ -11,6 +11,7 @@ import logging
 import argparse
 from unittest import loader
 
+import numpy as np
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
@@ -168,28 +169,24 @@ def run_experiment(model_name, use_residual, loaders, args, device):
         "val_loss": [], "val_acc": []
     }
 
-    timer = Timer()
-    timer.start()
 
-    for epoch in range(args.epochs):
-        train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer, device)
-        val_loss, val_acc = evaluate(model, test_loader, criterion, device)
-        
-        scheduler.step()
+    with Timer() as timer:
+        for epoch in range(args.epochs):
+            train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer, device)
+            val_loss, val_acc = evaluate(model, test_loader, criterion, device)
+            
+            scheduler.step()
 
-        history["train_loss"].append(train_loss)
-        history["train_acc"].append(train_acc)
-        history["val_loss"].append(val_loss)
-        history["val_acc"].append(val_acc)
+            history["train_loss"].append(train_loss)
+            history["train_acc"].append(train_acc)
+            history["val_loss"].append(val_loss)
+            history["val_acc"].append(val_acc)
 
-        logger.info(
-            f"Epoch [{epoch+1}/{args.epochs}] "
-            f"Train Loss: {train_loss:.4f} Acc: {train_acc:.2f}% | "
-            f"Val Loss: {val_loss:.4f} Acc: {val_acc:.2f}%"
-        )
-    
-    time_cost = timer.stop()
-    logger.info(f"Finished {model_name} in {time_cost:.2f}s")
+            logger.info(
+                f"Epoch [{epoch+1}/{args.epochs}] "
+                f"Train Loss: {train_loss:.4f} Acc: {train_acc:.2f}% | "
+                f"Val Loss: {val_loss:.4f} Acc: {val_acc:.2f}%"
+            )
 
     # Save Checkpoint
     os.makedirs(args.checkpoint_dir, exist_ok = True)

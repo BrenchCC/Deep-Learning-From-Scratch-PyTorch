@@ -196,10 +196,10 @@ class ResNet(nn.Module):
         # Zero Gamma Trick:
         # Initialize the last BN in each residual block to zero.
         # This makes the block act as an identity mapping initially.
-        if self.use_residual:
-            for m in self.modules():
-                if isinstance(m, BasicBlock):
-                    nn.init.constant_(m.bn2.weight, 0)
+        # if self.use_residual:
+        #     for m in self.modules():
+        #         if isinstance(m, BasicBlock):
+        #             nn.init.constant_(m.bn2.weight, 0)
 
     def forward(self, x):
         """
