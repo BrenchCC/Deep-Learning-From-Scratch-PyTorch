@@ -23,7 +23,7 @@
 
 ### 2.2 通俗解释
 想象一条精密的**流水线工厂**。
-* 原材料（输入数据 $X$, 权重 $W$）是**叶子节点（Leaf Nodes）**。
+* 原材料（输入数据 $X$ , 权重 $W$ ）是**叶子节点（Leaf Nodes）**。
 * 加工机器（加法、乘法、ReLU）是**中间节点**。
 * 最终产品（Loss）是**根节点**。
 * **前向传播（Forward）**：原料顺着传送带变成产品的过程。
@@ -77,13 +77,13 @@ $$
 2. **反向传播推导**：
     我们要计算 $\frac{\partial z}{\partial x}$。
     
-    $$
-    \frac{\partial z}{\partial x} = \frac{\partial z}{\partial a} \cdot \frac{\partial a}{\partial x} + \frac{\partial z}{\partial b} \cdot \frac{\partial b}{\partial x}
-    $$
+$$
+\frac{\partial z}{\partial x} = \frac{\partial z}{\partial a} \cdot \frac{\partial a}{\partial x} + \frac{\partial z}{\partial b} \cdot \frac{\partial b}{\partial x}
+$$
     
-    $$
-    \frac{\partial z}{\partial x} = 1 \cdot y + 1 \cdot \cos(x) = y + \cos(x)
-    $$
+$$
+\frac{\partial z}{\partial x} = 1 \cdot y + 1 \cdot \cos(x) = y + \cos(x)
+$$
 
 ### 4.2 Complex Example: 全连接层 (Linear Layer) 的矩阵求导
 **场景**：这是理解 LLM 内部 MLP 层的关键。
@@ -101,18 +101,19 @@ $$
 这是一个这一典型的 VJP 问题。利用矩阵微积分的迹（Trace）技巧或维度分析：
 1. **对于 $W$**：
     
-    $$
-    \frac{\partial L}{\partial W} = X^T \cdot \frac{\partial L}{\partial Y}
-    $$
-    
-    * *维度检查*：$(I \times B) \cdot (B \times O) \to (I \times O)$。与 $W$ 形状一致。
+$$
+\frac{\partial L}{\partial W} = X^T \cdot \frac{\partial L}{\partial Y}
+$$
+
+    维度检查*：$(I \times B) \cdot (B \times O) \to (I \times O)$。与 $W$ 形状一致。
+
 2. **对于 $X$**：
-    
-    $$
-    \frac{\partial L}{\partial X} = \frac{\partial L}{\partial Y} \cdot W^T
-    $$
-    
-    * *维度检查*：$(B \times O) \cdot (O \times I) \to (B \times I)$。与 $X$ 形状一致。
+
+$$
+\frac{\partial L}{\partial X} = \frac{\partial L}{\partial Y} \cdot W^T
+$$  
+
+    维度检查*：$(B \times O) \cdot (O \times I) \to (B \times I)$。与 $X$ 形状一致。
 
 **工程启示**：
 这就是为什么我们在手动实现 `Function.backward` 时，经常看到大量的 `transpose` 和 `matmul` 操作。如果不理解 VJP，很难写对维度的转换。
