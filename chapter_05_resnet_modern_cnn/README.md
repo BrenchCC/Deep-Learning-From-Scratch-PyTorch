@@ -34,7 +34,7 @@
 ---
 
 ## 2. 核心原理：残差网络 (ResNet)
-
+![image](images/image.png)
 ### 2.1 退化问题 (Degradation Problem)
 
 在 ResNet 提出之前，实验发现：当网络层数堆叠过深（例如 20 层 -> 56 层），模型在**训练集**上的 Loss 反而上升了。
