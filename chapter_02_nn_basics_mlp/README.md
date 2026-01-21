@@ -7,9 +7,7 @@
 > * [线性层和非线性激活函数说明](Layer_Clarify.md)
 
 ## 1. 核心概念：多层感知机 (Multi-Layer Perceptron)
-
-
-
+![image](images/image.png)
 ### 1.1 学术阐述
 多层感知机（MLP）是一种前馈神经网络（Feedforward Neural Network），由输入层、至少一个隐藏层和输出层组成。全连接层（Fully Connected Layer）是其基本构建单元，执行仿射变换（Affine Transformation）。如果不引入非线性激活函数，无论网络层数多深，其整体表现力等价于单层线性模型。
 

@@ -1,7 +1,7 @@
 # Chapter 04: Feature Extraction - Convolutional Neural Networks (CNN)
 
 ## 1. 核心原理 (Core Principles)
-
+![alt text](source/image.png)
 ### 1.1 卷积与互相关 (Convolution vs Cross-correlation)
 
 * **学术阐述**：

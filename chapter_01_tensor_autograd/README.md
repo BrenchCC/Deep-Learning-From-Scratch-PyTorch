@@ -15,7 +15,7 @@
 ---
 
 ## 2. 核心概念：计算图与 DAG
-
+![image](four_layer_autograd_graph.png)
 ### 2.1 学术阐述
 计算图是一种将数学表达式表示为**有向无环图（Directed Acyclic Graph, DAG）**的形式。
 * **节点（Nodes）**：表示变量（Tensor）或操作（Operation/Function）。在 PyTorch 中，节点通常承载了数据（`data`）和梯度（`grad`）。

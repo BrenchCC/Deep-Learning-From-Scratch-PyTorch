@@ -14,6 +14,7 @@
 2.  **无时序记忆 (No Temporal Memory)**：MLP 独立处理每个输入，无法捕捉前后文关系。例如，在理解 "The bank of the river" 和 "Bank account" 时，"Bank" 的含义完全依赖于上下文。
 
 ### 1.2 RNN 核心原理
+![image](sources/image.png)
 RNN 通过引入 **隐状态 (Hidden State)** 来解决这个问题。隐状态可以被视为网络的“记忆”，它在时间步（Time Steps）之间传递。
 
 #### 数学表达
@@ -44,7 +45,7 @@ RNN 的训练依赖于 **随时间反向传播 (Backpropagation Through Time, BP
 ---
 
 ## 2. LSTM (Long Short-Term Memory)
-
+![image](sources/lstm.png)
 LSTM 通过引入 **细胞状态 (Cell State)** 和 **门控机制 (Gating Mechanisms)** 巧妙地解决了梯度消失问题。
 
 ### 2.1 核心设计：双线传输
