@@ -7,7 +7,7 @@
 > * [线性层和非线性激活函数说明](Layer_Clarify.md)
 
 ## 1. 核心概念：多层感知机 (Multi-Layer Perceptron)
-![image](images/image.png)
+![image](sources/theory_01_mlp_architecture.png)
 ### 1.1 学术阐述
 多层感知机（MLP）是一种前馈神经网络（Feedforward Neural Network），由输入层、至少一个隐藏层和输出层组成。全连接层（Fully Connected Layer）是其基本构建单元，执行仿射变换（Affine Transformation）。如果不引入非线性激活函数，无论网络层数多深，其整体表现力等价于单层线性模型。
 
@@ -37,10 +37,11 @@ $$
 
 
 ### 2.1 为什么需要非线性？
+![image](sources/theory_03_linear_vs_nonlinear.png)
 若 $\sigma$ 是线性函数（如 $\sigma(z) = z$），则两层网络 $y = W_2(W_1 x + b_1) + b_2$ 可以简化为 $y = (W_2 W_1)x + (W_2 b_1 + b_2) = W'x + b'$。这证明了线性层的堆叠仍然是线性的，无法拟合非线性数据。
 
 ### 2.2 常见函数分析
-
+![image](sources/theory_02_activation_functions.png)
 * **Sigmoid**:
     * $\sigma(z) = \frac{1}{1 + e^{-z}}$
     * **特点**：输出在 (0, 1)，平滑。
@@ -56,7 +57,7 @@ $$
 ---
 
 ## 3. 损失函数 (Loss Functions) 与几何意义
-
+![image](sources/theory_04_loss_functions_geometry.png)
 ### 3.1 Mean Squared Error (MSE) - 回归
 
 $$
@@ -92,7 +93,7 @@ $$
 
 ### 4.2 直观图解与解释
 
-
+![image](sources/theory_05_universal_approximation.png)
 * **堆积木原理**：一个阶跃函数（Step Function）可以看作是一个基本的“砖块”。
 * 我们可以通过两个 Sigmoid 函数相减近似构造出一个类似矩形的“凸起”。
 * 无数个不同高度、不同位置、不同宽度的矩形并排拼凑，可以逼近任意复杂的曲线（就像微积分中的黎曼和）。
@@ -123,6 +124,7 @@ $$
 * **Conclusion**: 对于简单的线性映射，仿射变换（Affine Transformation）足矣。
 
 ### 5.2 Complex Example: 正弦波拟合 (Sine Wave Fitting)
+![image](sources/theory_06_piecewise_linear_approximation.png)
 这是一个**非线性回归**问题，展示了 MLP 如何通过“堆叠积木”的方式逼近任意复杂的连续函数。
 
 * **Problem**: 拟合函数 $y = \sin(x), x \in [-\pi, \pi]$。
@@ -145,7 +147,7 @@ $$
 ---
 
 ### 5.3 深度分析 (Deep Analysis)
-
+![image](sources/theory_07_mlp_depth_analysis.png)
 通过上述两个例子的对比，我们可以深入理解 MLP 的工作原理：
 
 #### 1. 拟合的本质：分段线性逼近 (Piecewise Linear Approximation)
@@ -243,7 +245,7 @@ model_complex = nn.Sequential(
 ---
 
 ### 7.2 深度 vs. 宽度：效率的博弈 (Depth vs. Width)
-
+![image](sources/theory_08_depth_vs_width_efficiency.png)
 #### 核心问题
 既然单隐层 MLP（只要够宽）就能逼近万物，为什么我们要搞 **Deep Learning**（几百层），而不是 **Wide Learning**（一层几亿个神经元）？
 
@@ -260,8 +262,7 @@ model_complex = nn.Sequential(
 ---
 
 ### 7.3 MLP 在现代 LLM 中的真实地位
-
-
+![images](sources/theory_09_transformer_mlp_role.png)
 #### 结构占比
 在标准的 Transformer Block 中：
 

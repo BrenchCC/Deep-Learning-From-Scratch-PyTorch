@@ -5,7 +5,7 @@ import argparse
 
 import numpy as np
 import matplotlib.pyplot as plt
-# New import for 3D plotting
+
 from mpl_toolkits.mplot3d import Axes3D
 
 import torch

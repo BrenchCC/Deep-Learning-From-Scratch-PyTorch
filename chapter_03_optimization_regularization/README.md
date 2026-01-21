@@ -11,9 +11,9 @@
 ---
 
 ## 1. 优化器演进 (Optimization Evolution)
-
+![image](sources/theory_01_optimizer_evolution.png)
 ### 1.1 随机梯度下降 (SGD) 与 动量 (Momentum)
-
+![image](sources/theory_02_sgd_vs_momentum.png)
 #### 学术阐述 (Academic Elaboration)
 SGD 是最基础的优化算法，它通过计算当前 mini-batch 的梯度来更新权重。然而，SGD 在面对**病态曲率**（Pathological Curvature，即在一个方向上坡度陡峭，而在另一个方向上平缓）时，容易发生剧烈的震荡，导致收敛缓慢。
 
@@ -48,10 +48,11 @@ $$\theta_{t+1} = \theta_t - v_{t+1}$$
     * **现象**: SGD 会在 $y=x^2$ 的山谷两壁间剧烈震荡，步长必须设得很小，收敛极慢。
     * **Momentum**: 能够积累沿 $x$ 轴正向的速度，抑制 $y$ 轴方向的震荡，从而快速穿过山谷到达全局最优解 $(1, 1)$。
 
+![image](sources/theory_03_pathological_curvature.png)
 ---
 
 ### 1.2 自适应优化器: Adam & AdamW
-
+![image](sources/theory_04_adam_optimizer.png)
 #### 学术阐述 (Academic Elaboration)
 SGD 系列对所有参数使用相同的学习率。但在稀疏特征或大模型中，不同参数的梯度量级差异巨大。**Adam (Adaptive Moment Estimation)** 结合了 Momentum (一阶动量) 和 RMSProp (二阶动量/梯度的平方) 的思想，为每个参数动态调整学习率。
 
@@ -75,6 +76,7 @@ SGD 系列对所有参数使用相同的学习率。但在稀疏特征或大模�
 AdamW 在上述第 5 步之后，额外独立执行一步衰减：
 $$\theta_{t+1} = \theta_{t+1} - \eta \cdot \lambda \cdot \theta_t$$
 *(其中 $\lambda$ 是 weight decay 系数)*
+![image](sources/theory_05_adam_vs_adamw.png)
 
 #### 代码片段样式 (Snippet)
 
@@ -92,7 +94,7 @@ optimizer = torch.optim.AdamW(
 ## 2. 稳定性与正则化 (Stability & Regularization)
 
 ### 2.1 Normalization: BatchNorm (BN) vs LayerNorm (LN)
-
+![image](sources/theory_06_normalization_comparison.png)
 #### 学术阐述 (Academic Elaboration)
 归一化（Normalization）旨在解决**内部协变量偏移 (Internal Covariate Shift)** 问题，即每一层的输入分布在训练过程中不断变化，导致后续层需要不断适应新的分布。
 
@@ -160,7 +162,7 @@ ln = nn.LayerNorm(normalized_shape = 512)
 ```
 
 ### 2.2 Dropout: 训练与推理的二象性
-
+![image](sources/theory_07_dropout_ensemble.png)
 #### 学术阐述 (Academic Elaboration)
 Dropout 是一种正则化技术，通过在训练过程中以概率 $p$ 随机将神经元输出置零，来防止模型过拟合。
 Dropout 的核心解释是**集成学习 (Ensemble Learning)**。一个包含 $N$ 个神经元的网络，使用 Dropout 可以看作是 $2^N$ 个共享权重的子网络的隐式集成。
@@ -203,7 +205,7 @@ $$
     通常 Dropout 在推理时关闭。但如果我们想估计模型的不确定性（Uncertainty），可以在**推理时强行开启 Dropout**，并进行多次前向传播。如果多次预测结果方差很大，说明模型对该输入不确定。这在自动驾驶或医疗诊断（需要可解释性）中非常有用。
 
 ### 2.3 RMSNorm: 更加高效的归一化
-
+![image](sources/theory_08_rmsnorm_simplification.png)
 #### 学术阐述 (Academic Elaboration)
 **RMSNorm** 是一种简化的 Layer Normalization。研究表明，LayerNorm 的成功主要归功于其对 **方差（Variance）** 的缩放，而 **均值中心化（Mean Centering）** 带来的收益微乎其微。
 RMSNorm 移除了均值计算部分，仅利用均方根（RMS）进行缩放。这不仅减少了计算量（节省了 Mean 的计算和减法操作），还保持了数值稳定性，特别是在 FP16/BF16 训练下具有更好的鲁棒性。
@@ -267,7 +269,7 @@ class RMSNorm(nn.Module):
 ```
 
 ### 2.4 Gradient Clipping: 防止梯度爆炸的阀门
-
+![image](sources/theory_09_gradient_clipping.png)
 #### 学术阐述 (Academic Elaboration)
 在深度神经网络（特别是 RNN 和深层 Transformer）中，反向传播时梯度的累积可能导致**梯度爆炸 (Exploding Gradient)**，使得参数更新步长过大，直接飞出最优解区域，导致 Loss 变为 NaN。
 **Gradient Norm Clipping** 通过限制梯度向量的 $L_2$ 范数（Norm）来解决此问题。如果梯度的范数超过阈值，就对其进行等比例缩小（Rescaling），改变梯度的模长但不改变梯度的**方向**。
@@ -328,7 +330,7 @@ optimizer.step()
 ```
 
 ### 2.5 L1 vs L2 Regularization: 稀疏性与平滑性
-
+![image](sources/theory_10_l1_vs_l2_regularization.png)
 #### 学术阐述 (Academic Elaboration)
 L1 和 L2 正则化通过在损失函数 $J(\theta)$ 中添加一个与参数 $\theta$ 相关的惩罚项 $\Omega(\theta)$ 来限制模型的复杂度。
 * **L1 (Lasso)**: 惩罚参数的绝对值之和。它倾向于产生**稀疏解**（即许多参数变为 0），相当于引入了拉普拉斯分布（Laplace Distribution）的先验。

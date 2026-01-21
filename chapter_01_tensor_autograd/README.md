@@ -15,11 +15,13 @@
 ---
 
 ## 2. 核心概念：计算图与 DAG
-![image](four_layer_autograd_graph.png)
+![image](sources/theory_01_computational_graph.png)
+
 ### 2.1 学术阐述
 计算图是一种将数学表达式表示为**有向无环图（Directed Acyclic Graph, DAG）**的形式。
 * **节点（Nodes）**：表示变量（Tensor）或操作（Operation/Function）。在 PyTorch 中，节点通常承载了数据（`data`）和梯度（`grad`）。
 * **边（Edges）**：表示数据流向（Data Dependency）。若节点 $B$ 的计算依赖于 $A$，则存在一条 $A \to B$ 的边。
+![image](four_layer_autograd_graph.png)
 
 ### 2.2 通俗解释
 想象一条精密的**流水线工厂**。
@@ -38,6 +40,7 @@
 深度学习使用的是**反向模式自动微分（Reverse-mode AD）**。
 
 #### 标量形式 (Scalar Case)
+![image](sources/theory_02_chain_rule_visualization.png)
 假设 $y = f(u)$ 且 $u = g(x)$，即 $y = f(g(x))$。
 根据链式法则：
 
@@ -46,6 +49,7 @@ $$
 $$
 
 #### 向量/矩阵形式 (Vector/Matrix Case - The Engineer's View)
+![image](sources/theory_03_jacobian_matrix.png)
 这在工程中更为重要。假设 $\mathbf{y} \in \mathbb{R}^m$ 是 $\mathbf{x} \in \mathbb{R}^n$ 的函数。
 导数不再是标量，而是**雅可比矩阵（Jacobian Matrix）** $J$：
 
@@ -64,8 +68,7 @@ $$
 ---
 
 ## 4. 实例分析：从标量到矩阵
-
-为了符合你的认知习惯，我们通过两层例子来拆解。
+我们通过两层例子来拆解。
 
 ### 4.1 Simple Example: 标量复合函数
 **场景**：计算 $z = (x \cdot y) + \sin(x)$ 的梯度。
@@ -86,6 +89,7 @@ $$
 $$
 
 ### 4.2 Complex Example: 全连接层 (Linear Layer) 的矩阵求导
+![image](sources/theory_04_vjp_engineering.png)
 **场景**：这是理解 LLM 内部 MLP 层的关键。
 前向公式：$Y = XW + b$
 * $X \in \mathbb{R}^{B \times I}$ (Batch, Input_dim)
@@ -122,11 +126,13 @@ $$
 
 ## 5. PyTorch 的动态图机制 (Define-by-Run)
 
-### 5.1 静态图 vs 动态图
+### 5.1 静态图 vs 
+![image](sources/theory_05_static_vs_dynamic_graph.png)
 * **Static Graph (TensorFlow v1)**: Define-and-Run。先像写编译器一样定义好完整的图结构，然后塞入数据执行。优点是容易优化（算子融合），缺点是调试困难，无法使用 Python 原生控制流（if/else）。
 * **Dynamic Graph (PyTorch)**: Define-by-Run。图的构建是在代码执行时动态生成的。
 
 ### 5.2 PyTorch 内部实现
+![image](sources/theory_06_pytorch_autograd_internal.png)
 当你执行 `z = x * y` 时，PyTorch 做了两件事：
 1. 计算数值结果。
 2. 构建图节点：
@@ -139,7 +145,7 @@ $$
 
 ## 6. 推导例子
 ### 6.1 网络和 Loss
-
+![image](sources/theory_07_four_layer_network_flow.png)
 #### 前向定义（单样本，标量 loss）
 
 输入：
@@ -343,6 +349,7 @@ $$
 > [!TIP]
 > **反向传播不是在“算 loss”，而是在把 loss 的导数，一层一层传回去，并在每一层顺手把参数的梯度记下来。**
 
+![image](sources/theory_08_gradient_accumulation.png)
 顺序永远是：`loss → 输出层 → 中间层 → 输入层`
 
 ---

@@ -11,6 +11,7 @@
 深度学习在计算机视觉领域的爆发并非一蹴而就，而是一场关于“深度”、“宽度”和“计算效率”的博弈。
 
 ### 演变逻辑梳理
+![image](images/theory_01_cnn_evolution.png)
 
 | 模型 | 年份 | 核心创新 (Key Innovation) | 解决的问题 (Problem Solved) |
 | :--- | :--- | :--- | :--- |
@@ -22,7 +23,7 @@
 | **DenseNet** | 2017 | Dense Connection (密集连接) | 极致的特征复用（Feature Reuse）。通过 Channel Concat 而非 Add 传递特征，缓解了梯度消失，但显存占用较高。 |
 
 ### 关键转折点解析
-
+![image](images/theory_02_vgg_comparison.png)
 * **VGG 的“小即是大”**：
     堆叠 2 个 $3 \times 3$ 卷积层的感受野等于 1 个 $5 \times 5$ 卷积层。
     * 参数量：$2 \times (3 \times 3 \times C^2) = 18C^2$ vs $1 \times (5 \times 5 \times C^2) = 25C^2$（节省约 28%）。
@@ -34,14 +35,14 @@
 ---
 
 ## 2. 核心原理：残差网络 (ResNet)
-![image](images/image.png)
 ### 2.1 退化问题 (Degradation Problem)
-
+![image](images/theory_03_resnet_degradation.png)
 在 ResNet 提出之前，实验发现：当网络层数堆叠过深（例如 20 层 -> 56 层），模型在**训练集**上的 Loss 反而上升了。
 * **注意**：这不是过拟合（Overfitting），因为训练误差也变大了。
 * **原因**：优化难度增加。深层网络中，梯度在反向传播时经过多次连乘容易弥散或爆炸；同时，要让一个深层非线性网络去逼近一个简单的恒等映射（Identity Mapping）是非常困难的。
 
 ### 2.2 残差块 (Residual Block) 数学推导
+![image](images/theory_04_resnet_block.png)
 
 ResNet 的核心思想是：**与其让网络去学习目标映射 $H(x)$，不如让它学习残差函数 $F(x) = H(x) - x$。**
 
@@ -58,6 +59,7 @@ $$
 * **直观解释**：如果最佳层操作是“什么都不做”，网络只需将权重 $W_i$ 学习为 0，使得 $F(x) \to 0$，此时 $y = x$。这比直接学习 $H(x) = x$ 要容易得多。
 
 #### Backward Pass (梯度“高速公路”证明)
+![image](images/theory_05_resnet_block_gradient.png)
 假设没有激活函数 $\sigma$ (简化分析)，对于第 $L$ 层到第 $l$ 层的反向传播：
 
 正向递归公式：
@@ -80,7 +82,7 @@ $$
 公式中的 **$1$** 保证了梯度可以直接从 $L$ 层无损地回传到 $l$ 层（Shortcut Connection）。即使 $\frac{\partial}{\partial x_l} \sum F$ 部分因为权重极小而趋近于 0，梯度也不会消失，依然保留了 $\frac{\partial \mathcal{L}}{\partial x_L}$ 这一项。这建立了一条梯度的“高速公路”。
 
 ### 2.3 BasicBlock vs Bottleneck
-
+![image](images/theory_06_resnet_block_comparison.png)
 根据网络深度不同，ResNet 设计了两种 Block：
 
 | 类型 | 结构 (Shape 变化) | 适用网络 | 目的 |
@@ -144,6 +146,8 @@ self.downsample = nn.Sequential(
         ```
 
 ### 3.3 Stride=2 Conv 替代 Pooling
+
+![image](images/theory_07_resnet_stride_conv.png)
 
 在 VGG 时代，下采样（Downsampling）主要依靠 `MaxPool2d` 或 `AvgPool2d`。而在 ResNet 及现代网络（如 ConvNeXt, EfficientNet）中，倾向于使用 `stride=2` 的卷积层来替代池化层。
 
@@ -283,7 +287,7 @@ if __name__ == "__main__":
 * **工程选择**：虽然 V2 理论更优，但标准 `torchvision.models.resnet` 实现依然默认使用 **V1**，因为它在标准数据集上表现已经足够好且更容易迁移。我们将遵循 V1 标准以保持与生态兼容。
 
 ### 5.2 全局平均池化 (Global Average Pooling, GAP)
-
+![image](images/theory_08_resnet_gap.png)
 回顾 VGG 到 ResNet 的进化，有一个巨大的参数量缩减往往被忽略：**分类头的设计**。
 
 * **VGG 方式**：Flatten -> FC (4096) -> FC (4096) -> FC (1000)。

@@ -1,9 +1,8 @@
 # Chapter 04: Feature Extraction - Convolutional Neural Networks (CNN)
 
 ## 1. 核心原理 (Core Principles)
-![alt text](source/image.png)
 ### 1.1 卷积与互相关 (Convolution vs Cross-correlation)
-
+![image](sources/theory_01_conv_vs_cross_correlation.png)
 * **学术阐述**：
     在严格的数学定义中，卷积（Convolution）操作涉及两个函数 $f$ 和 $g$，其中 $g$ 需要经过**翻转（Flip）**后再与 $f$ 进行滑动点积。公式如下：
     $$(f * g)(t) = \int_{-\infty}^{\infty} f(\tau)g(t - \tau) d\tau$$
@@ -25,7 +24,7 @@
     ```
 
 ### 1.2 局部连接与权值共享 (Local Connectivity & Weight Sharing)
-
+![image](sources/theory_02_cnn_core_concepts.png)
 这是 CNN 区别于全连接层（MLP）并能高效处理图像的两个核心假设。
 
 1.  **局部连接 (Local Connectivity)**：
@@ -36,7 +35,7 @@
     * **意义**：参数量不再随图像尺寸增加而线性爆炸。同时实现了**平移不变性 (Translation Invariance)** —— 即无论猫在图片的左上角还是右下角，同一个“猫耳检测器”卷积核都能识别出来。
 
 ### 1.3 感受野 (Receptive Field)
-
+![image](sources/theory_03_receptive_field_growth.png)
 * **概念**：
     CNN 输出特征图（Feature Map）上的一个像素点，在原始输入图像上所能“看”到的区域大小。层数越深，感受野越大，提取的特征越抽象（语义级）。
 
@@ -53,7 +52,7 @@
 ## 2. PyTorch 实践细节 (PyTorch Implementation Details)
 
 ### 2.1 `nn.Conv2d` 关键参数详解
-
+![image](sources/theory_04_conv2d_parameters.png)
 构造函数：`nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, dilation, groups, bias)`
 
 1.  **`in_channels` & `out_channels`**：
@@ -71,7 +70,7 @@
     * 当 $g = \text{in\\_channels} = \text{out\\_channels}$ 时，为 **Depthwise Convolution**（如 MobileNet），每个通道独立卷积，极大降低参数量。
 
 ### 2.2 维度变化公式 (Dimension Arithmetic)
-
+![image](sources/theory_05_dimension_calculation.png)
 对于输入维度 $(N, C_{in}, H_{in}, W_{in})$，经过 `Conv2d` 后输出 $(N, C_{out}, H_{out}, W_{out})$：
 
 $$ 
@@ -81,7 +80,7 @@ $$
 *注：$W_{out}$ 的计算同理。*
 
 ### 2.3 池化层 (Pooling)
-
+![image](sources/theory_06_pooling_comparison.png)
 * **作用**：
     1.  **降采样**：减小特征图尺寸，降低计算量。
     2.  **不变性增强**：对微小的平移和形变具有鲁棒性。
@@ -225,7 +224,7 @@ def calculate_cnn_layer_info():
     * **不变性**：照片里的猫稍微歪了一点点头，或者手抖了一点，Max Pooling 选出来的最大值（最显著特征）还是那个耳朵，输出结果没变。
 
 ### 4.2 1x1 卷积的特殊意义 (The Power of 1x1 Convolution)
-
+![image](sources/theory_07_one_by_one_conv.png)
 * **学术阐述**：
     当 $k=1$ 时，卷积退化为对每个像素位置在 **通道维度 (Channel Dimension)** 上的全连接层（FC）。
     $$Out_{x,y} = W \cdot In_{x,y} + b$$
@@ -254,7 +253,7 @@ def calculate_cnn_layer_info():
     推理时不再计算 Batch 的统计量，而是使用训练期间记录的 **Running Mean** 和 **Running Variance**。
 
 ### 4.4 Im2Col：卷积的工程化实现 (The Arithmetic Theory of Implementation)
-
+![image](sources/theory_08_im2col_principle.png)
 这是我们后续手写代码时，为了避免写 4 层 `for` 循环（极慢）而必须掌握的矩阵化理论。
 
 * **核心逻辑**：
