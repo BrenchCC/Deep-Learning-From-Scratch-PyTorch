@@ -2,7 +2,7 @@ import time
 import logging
 
 # Configure logger for this module
-logger = logging.getLogger("Timer")
+logger = logging.getLogger(__name__)
 
 class Timer:
     """

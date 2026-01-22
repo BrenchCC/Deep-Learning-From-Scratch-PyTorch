@@ -28,7 +28,7 @@ $$
 y_t = W_{hy} h_t + b_{hy}
 $$
 
-* **参数共享 (Parameter Sharing)**：在所有时间步中，$W_{ih}, W_{hh}, W_{hy}$ 是共享的。这意味着模型在学习通用的序列模式，而不是针对特定位置学习。
+* **参数共享 (Parameter Sharing)**：在所有时间步中, $W_{ih}, W_{hh}, W_{hy}$ 是共享的。这意味着模型在学习通用的序列模式，而不是针对特定位置学习。
 
 #### 简明图解：按时间步展开 (Unrolling)
 可以将 RNN 看作是同一个网络单元在时间上的多次复制：
@@ -132,6 +132,15 @@ PyTorch 默认是 `batch_first=False`，这是源于 cuDNN 的优化习惯，但
 * **Output 维度变化**: `hidden_size` 变为 `hidden_size * 2`。
 * **直觉**: 预测 "I ___ hungry" 时，仅看 "I" 是不够的，看到后面的 "hungry" 对填充 "am" 至关重要。
 
+### 3.5 处理变长序列 (Packed Sequence)
+在训练时，我们通常会有不同长度的序列。为了有效利用 GPU 并行计算，PyTorch 提供了 `pack_padded_sequence`。
+* **原理**: 仅对有效时间步进行计算，跳过填充部分。
+* **注意**: 输入必须是已排序的（按长度降序），且 `batch_first=True`。
+```python
+lengths = lengths.to(torch.device("cpu")) # lengths stays on CPU for pack_padded_sequence
+```
+> [!TIP]
+> lengths 被放在 CPU 上是为了符合 pack_padded_sequence 的需求，确保变长序列的处理不会出现错误并能高效地运行。
 ---
 
 ## 4. 理论验证与代码示例
@@ -287,4 +296,76 @@ if __name__ == "__main__":
 
     log_model_info(model)
     logger.info("Model architecture defined specifically for sequence classification.")
+```
+
+## 5. GRU (Gated Recurrent Unit) - 轻量级进化
+
+虽然 LSTM 效果显著，但其参数量较多（每个单元 4 个线性层）。2014 年提出的 GRU 是一种更简化的变体，它在很多场景下能达到与 LSTM 相当的效果，但计算效率更高。
+
+### 5.1 核心差异：做减法
+* **状态合并**：GRU 只有隐状态 $h_t$，去掉了细胞状态 $C_t$。
+* **门控合并**：
+    * **更新门 (Update Gate, $z_t$)**：替代了 LSTM 的遗忘门和输入门。它决定了旧状态保留多少，新状态写入多少。
+    * **重置门 (Reset Gate, $r_t$)**：决定在计算新的候选隐状态时，应该忽略多少之前的隐状态。
+
+### 5.2 数学表达
+$$
+z_t = \sigma(W_z \cdot [h_{t-1}, x_t])
+$$
+$$
+r_t = \sigma(W_r \cdot [h_{t-1}, x_t])
+$$
+
+**候选隐状态**（注意 $r_t$ 的作用）：
+$$
+\tilde{h}_t = \tanh(W \cdot [r_t * h_{t-1}, x_t])
+$$
+
+**最终隐状态更新**（互补性质）：
+$$
+h_t = (1 - z_t) * h_{t-1} + z_t * \tilde{h}_t
+$$
+
+### 5.3 LSTM vs GRU 选型指南
+| 特性 | LSTM | GRU |
+| :--- | :--- | :--- |
+| **参数量** | 较多 ($4 \times$ hidden sizes) | 较少 ($3 \times$ hidden sizes) |
+| **长序列能力** | 理论上更强 (Cell State 分离) | 稍弱，但在短-中序列表现优异 |
+| **训练速度** | 较慢 | 更快 |
+| **推荐场景** | 极其复杂的长依赖任务 | 数据集较小或对延迟敏感的任务 |
+
+---
+
+## 6. RNN 训练的高级工程策略 (Advanced Engineering)
+
+训练循环神经网络比 CNN 更不稳定。以下是我们在工程实现中必须集成的策略。
+
+### 6.1 梯度裁剪 (Gradient Clipping)
+**问题**：RNN 的梯度爆炸（Exploding Gradient）会导致 Loss 突然变成 `NaN`。
+**解决方案**：限制梯度的最大范数（Norm）。这比简单的 value clipping（截断数值）更保留梯度的方向信息。
+
+* **PyTorch 实现**：
+    ```python
+    # 在 optimizer.step() 之前调用
+    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+    ```
+
+### 6.2 Teacher Forcing
+**场景**：序列生成（如机器翻译，Seq2Seq）。
+**原理**：在训练解码器（Decoder）时，不要将上一时刻模型的**预测输出**作为当前时刻的输入，而是强制使用**真实标签 (Ground Truth)** 作为输入。
+* **优点**：训练初期收敛极快，避免“一步错，步步错”的误差累积。
+* **缺点**：导致“训练-推理不一致” (Exposure Bias)。
+* **策略**：使用 `teacher_forcing_ratio` 进行动态衰减（前期 100% 使用，后期逐渐减少）。
+
+### 6.3 变长序列处理与 Masking
+在 Batch 训练中，不同长度的句子需要 Pad 到相同长度。
+* **Padding**: 填充 `0` 或 `<pad>` token。
+* **Masking**: 在计算 Loss 时，必须**屏蔽**掉 Padding 部分产生的 Loss，否则模型会花费大量精力去学习“如何预测 padding”。
+
+**代码逻辑示意 (Manual Masking)**：
+```python
+# 假设 loss_fn 是 CrossEntropyLoss(reduction='none')
+loss = loss_fn(output, target) # [Batch, Seq_Len]
+mask = (target != pad_token_id).float()
+masked_loss = (loss * mask).sum() / mask.sum()
 ```
