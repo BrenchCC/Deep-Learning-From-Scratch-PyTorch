@@ -9,6 +9,8 @@
 ## 1. 序列建模基础 (Foundations)
 
 ### 1.1 为什么 MLP 无法处理序列？
+![theory_01_rnn_vs_mlp_limitations](sources/theory_01_rnn_vs_mlp_limitations.png)
+
 传统的全连接网络（MLP）在处理序列数据时面临两个致命缺陷：
 1.  **输入维度固定**：MLP 需要固定的输入大小（例如 $28 \times 28$ 像素）。而句子或音频片段的长度是可变的。
 2.  **无时序记忆 (No Temporal Memory)**：MLP 独立处理每个输入，无法捕捉前后文关系。例如，在理解 "The bank of the river" 和 "Bank account" 时，"Bank" 的含义完全依赖于上下文。
@@ -31,6 +33,8 @@ $$
 * **参数共享 (Parameter Sharing)**：在所有时间步中, $W_{ih}, W_{hh}, W_{hy}$ 是共享的。这意味着模型在学习通用的序列模式，而不是针对特定位置学习。
 
 #### 简明图解：按时间步展开 (Unrolling)
+![theory_02_rnn_unfolding_principle](sources/theory_02_rnn_unfolding_principle.png)
+
 可以将 RNN 看作是同一个网络单元在时间上的多次复制：
 `x_0` -> [RNN] -> `h_0` -> [RNN] -> `h_1` ...
 
@@ -38,14 +42,16 @@ $$
 RNN 的训练依赖于 **随时间反向传播 (Backpropagation Through Time, BPTT)**。这本质上是将 RNN 展开后的链式法则。
 
 * **梯度消失 (Vanishing Gradient)**：
-    由于链式法则涉及连乘，如果权重矩阵的特征值小于 1（或激活函数导数小于 1，如 Tanh/Sigmoid），经过多层传递后梯度会趋近于 0。这导致 RNN **无法捕捉长距离依赖**（例如：句首的主语决定了句尾的动词形态，但 RNN 此时已经“忘”了主语）。
+    由于链式法则涉及连乘，如果权重矩阵的特征值小于 1（或激活函数导数小于 1，如 Tanh/Sigmoid），经过多层传递后梯度会趋近于 0。这导致 RNN **无法捕捉长距离依赖**（例如：句首的主语决定了句尾的动词形态，但 RNN 此时已经"忘"了主语）。
 * **梯度爆炸 (Exploding Gradient)**：
     反之，如果梯度过大，权重会大幅更新导致网络不稳定（通常通过 `gradient clipping` 解决）。
+
+![theory_03_bptt_gradient_problems](sources/theory_03_bptt_gradient_problems.png)
 
 ---
 
 ## 2. LSTM (Long Short-Term Memory)
-![image](sources/lstm.png)
+![theory_04_lstm_cell_structure](sources/theory_04_lstm_cell_structure.png)
 LSTM 通过引入 **细胞状态 (Cell State)** 和 **门控机制 (Gating Mechanisms)** 巧妙地解决了梯度消失问题。
 
 ### 2.1 核心设计：双线传输
@@ -53,6 +59,8 @@ LSTM 通过引入 **细胞状态 (Cell State)** 和 **门控机制 (Gating Mecha
 * **Cell State ($C_t$)**：长期记忆（传送带），信息可以在其上无阻碍地流转，仅进行线性的加减操作，极大地缓解了梯度消失。
 
 ### 2.2 门控机制详解
+![theory_05_lstm_gates_detailed](sources/theory_05_lstm_gates_detailed.png)
+
 我们可以将门控想象成电路中的**模拟开关**（使用 Sigmoid 函数，输出 0~1），决定信息通过的比例。
 
 #### A. 遗忘门 (Forget Gate) - "我们要忘掉什么？"
@@ -124,10 +132,14 @@ PyTorch 默认是 `batch_first=False`，这是源于 cuDNN 的优化习惯，但
 建议在定义 RNN/LSTM 时总是设置 `batch_first=True`，以减少维度转换的困扰。
 
 ### 3.3 nn.RNN vs nn.RNNCell
+![theory_07_sequence_processing_patterns](sources/theory_07_sequence_processing_patterns.png)
+
 * **nn.RNN / nn.LSTM**: 处理**整个序列**。输入是一个序列张量，内部自动循环所有时间步。适合训练阶段。
 * **nn.RNNCell / nn.LSTMCell**: 处理**单个时间步**。输入是 $(x_t, h_{t-1})$。适合需要手动控制每一步的复杂场景（如 Attention 解码器）。
 
 ### 3.4 双向 RNN (Bidirectional)
+![theory_08_bidirectional_rnn_concept](sources/theory_08_bidirectional_rnn_concept.png)
+
 设置 `bidirectional=True`。模型会包含两个独立的 RNN（前向和后向）。
 * **Output 维度变化**: `hidden_size` 变为 `hidden_size * 2`。
 * **直觉**: 预测 "I ___ hungry" 时，仅看 "I" 是不够的，看到后面的 "hungry" 对填充 "am" 至关重要。
@@ -299,6 +311,7 @@ if __name__ == "__main__":
 ```
 
 ## 5. GRU (Gated Recurrent Unit) - 轻量级进化
+![theory_06_gru_vs_lstm_comparison](sources/theory_06_gru_vs_lstm_comparison.png)
 
 虽然 LSTM 效果显著，但其参数量较多（每个单元 4 个线性层）。2014 年提出的 GRU 是一种更简化的变体，它在很多场景下能达到与 LSTM 相当的效果，但计算效率更高。
 

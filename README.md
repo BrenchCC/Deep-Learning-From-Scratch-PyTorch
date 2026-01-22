@@ -35,11 +35,11 @@
 - ✅ **预训练模型**：提供训练好的ResNet-18和PlainNet-18模型
 
 ### 📊 数据统计
-- **📚 理论文档**：5章详细教程，累计1000+行理论说明
-- **💻 代码实现**：30+个独立脚本，覆盖所有核心算法
-- **🎯 实验场景**：15+个不同实验，验证各种技术效果
+- **📚 理论文档**：6章详细教程，累计1380+行理论说明
+- **💻 代码实现**：35+个独立脚本，覆盖所有核心算法
+- **🎯 实验场景**：18+个不同实验，验证各种技术效果
 - **🏭 预训练模型**：8个预训练模型，直接体验最佳效果
-- **📈 可视化图表**：20+张分析图表，直观理解技术差异
+- **📈 可视化图表**：25+张分析图表，直观理解技术差异
 
 ## ✨ 项目特点
 - **理论与实践结合**：每个章节包含详细的理论讲解和可运行的代码实现
@@ -89,10 +89,11 @@ Deep-Learning-From-Scratch-PyTorch/
 2. **第5章** → 掌握残差连接和现代CNN架构（7-10天）
 3. **项目实践** → 结合CNN完成图像分类项目（7-14天）
 
-### 🎆 高级路径（开发中）
+### 🎆 高级路径（部分可用）
 **目标**：掌握序列建模和注意力机制
-1. **第6-7章** → RNN/LSTM和注意力机制（开发中）
-2. **第8-10章** → Transformer和现代LLM技术（开发中）
+1. **第6章** → 循环神经网络RNN/LSTM/GRU（已完成，建议学习时间：7-10天）
+2. **第7章** → 注意力机制（开发中）
+3. **第8-10章** → Transformer和现代LLM技术（开发中）
 
 ## 📊 技术演进图谱
 ```
@@ -207,11 +208,19 @@ Chapter 6-10 (序列→注意力→Transformer→LLM)
   - [训练对比图](chapter_05_resnet_modern_cnn/results/loss_comparison.png) - ResNet vs PlainNet训练曲线对比
   - [Grad-CAM可视化](chapter_05_resnet_modern_cnn/results/cam_vis/) - 模型注意力热图
 
-#### [Chapter 06: RNN系列](chapter_06_rnn_lstm_seq/) 🚧
-- **核心内容**：循环神经网络原理、序列建模技术
-- **关键技术**：RNN、LSTM、GRU、双向RNN
-- **应用场景**：自然语言处理、时间序列预测、语音识别
-- **状态**：规划中
+#### [Chapter 06: RNN系列](chapter_06_rnn_lstm_seq/) ✅
+- **核心内容**：循环神经网络原理、序列建模技术、LSTM门控机制、GRU简化变体
+- **关键技术**：RNN、LSTM、GRU、双向RNN、维度处理、变长序列、梯度裁剪
+- **理论深度**：BPTT算法、梯度消失/爆炸问题、门控机制数学推导、LSTM vs GRU对比
+- **应用场景**：自然语言处理、时间序列预测、语音识别、情感分类
+- **代码实现**：
+  - [简单LSTM示例](chapter_06_rnn_lstm_seq/examples/easy_demo.py) - 维度推演和基础操作
+  - [情感分类LSTM](chapter_06_rnn_lstm_seq/examples/sentime_lstm_demo.py) - 完整序列分类架构
+  - [RNN/LSTM模型实现](chapter_06_rnn_lstm_seq/model.py) - 支持多种RNN变体
+  - [数据集处理](chapter_06_rnn_lstm_seq/dataset.py) - 文本数据加载和预处理
+  - [完整训练流程](chapter_06_rnn_lstm_seq/main.py) - 从数据到模型的完整pipeline
+- **实验设计**：序列建模基础、情感分类任务、维度处理演示
+- **理论文档**：380+行详细教程，从RNN原理到工程实现细节
 
 ### 高级篇
 
@@ -219,7 +228,7 @@ Chapter 6-10 (序列→注意力→Transformer→LLM)
 - **核心内容**：注意力机制原理、各种注意力变体
 - **关键技术**：自注意力、多头注意力、注意力可视化
 - **应用场景**：机器翻译、文本摘要、图像描述
-- **状态**：规划中
+- **状态**：开发中（基础架构已创建）
 
 #### [Chapter 08: 原始Transformer](chapter_08_transformer_vanilla/) 🚧
 - **核心内容**：Transformer架构原理、从零实现Transformer
@@ -316,22 +325,34 @@ python chapter_05_resnet_modern_cnn/src/inference.py --model_path ./chapter_05_r
 python chapter_05_resnet_modern_cnn/src/cam.py --model_path ./chapter_05_resnet_modern_cnn/checkpoints/resnet18_stl10.pth --image_path ./chapter_05_resnet_modern_cnn/images/airplane.png
 ```
 
+### Chapter 06: RNN系列
+```bash
+# 运行简单LSTM示例（维度推演）
+python chapter_06_rnn_lstm_seq/examples/easy_demo.py
+# 查看情感分类LSTM架构
+python chapter_06_rnn_lstm_seq/examples/sentime_lstm_demo.py
+# 运行完整训练流程
+python chapter_06_rnn_lstm_seq/main.py --epochs 50 --batch_size 32 --lr 0.001
+# 查看模型实现
+python chapter_06_rnn_lstm_seq/model.py
+```
+
 ## 📊 项目进度
 
-### 🎯 总体完成度：**50%** (5/10 章节已完成)
+### 🎯 总体完成度：**60%** (6/10 章节已完成)
 
 #### ✅ 基础篇 (100% 完成)
 - **Chapter 01**: 计算图与自动微分 ████████████ 100%
-- **Chapter 02**: 万能逼近器（MLP） ████████████ 100%  
+- **Chapter 02**: 万能逼近器（MLP） ████████████ 100%
 - **Chapter 03**: 优化与正则化 ████████████ 100%
 
-#### ✅ 进阶篇 (67% 完成)
+#### ✅ 进阶篇 (100% 完成)
 - **Chapter 04**: 经典CNN ████████████ 100%
 - **Chapter 05**: ResNet与现代CNN ████████████ 100%
-- **Chapter 06**: RNN系列 ░░░░░░░░░░ 0%
+- **Chapter 06**: RNN系列 ████████████ 100%
 
-#### 🚧 高级篇 (0% 完成)
-- **Chapter 07**: 注意力机制 ░░░░░░░░░░ 0%
+#### 🚧 高级篇 (10% 完成)
+- **Chapter 07**: 注意力机制 █░░░░░░░░░░ 10%
 - **Chapter 08**: 原始Transformer ░░░░░░░░░░ 0%
 - **Chapter 09**: 高效注意力 ░░░░░░░░░░ 0%
 - **Chapter 10**: LLM现代组件 ░░░░░░░░░░ 0%
@@ -345,8 +366,8 @@ python chapter_05_resnet_modern_cnn/src/cam.py --model_path ./chapter_05_resnet_
 | **Chapter 03: 优化与正则化** | ✅ 已完成 | 100% | 包含优化器、正则化和标准化实验 | 已发布 |
 | **Chapter 04: 经典CNN** | ✅ 已完成 | 100% | 包含卷积数学演示、CNN模型实现、CIFAR-10训练和推理可视化 | 已发布 |
 | **Chapter 05: ResNet与现代CNN** | ✅ 已完成 | 100% | 包含完整的CNN发展史、残差连接理论推导、ResNet vs PlainNet对比实验、Grad-CAM可视化、预训练模型和详细的理论文档 | 已发布 |
-| **Chapter 06: RNN系列** | 🚧 开发中 | 30% | 基础RNN、LSTM、GRU实现 | 2025年1月 |
-| **Chapter 07: 注意力机制** | 🚧 规划中 | 0% | 自注意力、多头注意力、注意力可视化 | 2025年1月 |
+| **Chapter 06: RNN系列** | ✅ 已完成 | 100% | 包含完整的RNN/LSTM/GRU实现、情感分类任务、维度处理演示、380+行详细理论文档 | 已发布 |
+| **Chapter 07: 注意力机制** | 🚧 开发中 | 10% | 基础架构已创建，注意力机制原理研究 | 2025年1月 |
 | **Chapter 08: 原始Transformer** | 🚧 规划中 | 0% | 完整Transformer实现、位置编码、层归一化 | 2025年2月 |
 | **Chapter 09: 高效注意力** | 🚧 规划中 | 0% | 线性注意力、局部注意力、稀疏注意力 | 2025年2月 |
 | **Chapter 10: LLM现代组件** | 🚧 规划中 | 0% | 缩放规律、指令微调、RLHF、高效训练 | 2025年2月 |
