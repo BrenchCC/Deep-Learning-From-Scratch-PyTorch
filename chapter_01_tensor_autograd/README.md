@@ -2,7 +2,7 @@
 
 ## 1. 前言：深度学习的“引擎”
 
-欢迎来到第一章。在编写任何具体的神经网络代码之前，作为一名算法工程师，我们需要深刻理解深度学习框架背后的核心引擎：**计算图（Computational Graph）**与**自动微分（Automatic Differentiation, AD）**。
+欢迎来到第一章。在编写任何具体的神经网络代码之前，作为一名算法工程师，我们需要深刻理解深度学习框架背后的核心引擎：**计算图(Computational Graph)** 与 **自动微分(Automatic Differentiation, AD)**。
 
 虽然现代 PyTorch 封装得非常完美，只需调用 `.backward()`，但理解其底层的 **DAG（有向无环图）** 构建逻辑和 **Vector-Jacobian Product (VJP)** 的传播机制，是优化显存（如 Checkpointing 技术）、理解分布式训练（如 Pipeline Parallelism）以及手写复杂算子（Custom Autograd Function）的基础。
 
@@ -18,7 +18,7 @@
 ![image](sources/theory_01_computational_graph_dag.png)
 
 ### 2.1 学术阐述
-计算图是一种将数学表达式表示为**有向无环图（Directed Acyclic Graph, DAG）**的形式。
+计算图是一种将数学表达式表示为**有向无环图(Directed Acyclic Graph, DAG)** 的形式。
 * **节点（Nodes）**：表示变量（Tensor）或操作（Operation/Function）。在 PyTorch 中，节点通常承载了数据（`data`）和梯度（`grad`）。
 * **边（Edges）**：表示数据流向（Data Dependency）。若节点 $B$ 的计算依赖于 $A$，则存在一条 $A \to B$ 的边。
 ![image](four_layer_autograd_graph.png)
