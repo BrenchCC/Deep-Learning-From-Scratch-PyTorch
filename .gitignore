@@ -27,6 +27,7 @@ share/python-wheels/
 MANIFEST
 .DS_Store
 .vscode
+.obsidian
 chapter_04_cnn_classic/data/custom_imgs
 chapter_04_cnn_classic/images
 chapter_05_resnet_modern_cnn/data/stl10_binary

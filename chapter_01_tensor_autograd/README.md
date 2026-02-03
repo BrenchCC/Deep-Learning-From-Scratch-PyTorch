@@ -15,7 +15,7 @@
 ---
 
 ## 2. 核心概念：计算图与 DAG
-![image](sources/theory_01_computational_graph.png)
+![image](sources/theory_01_computational_graph_dag.png)
 
 ### 2.1 学术阐述
 计算图是一种将数学表达式表示为**有向无环图（Directed Acyclic Graph, DAG）**的形式。
@@ -364,5 +364,5 @@ $$
     * **Four-Layer Network**: 对应理论部分的四层神经网络，验证多参数、多层的反向传播。
     * **Core Logic**: 通过 `torch.autograd.grad` 与我们手写的矩阵微积分公式进行对比，确保误差在 `1e-6` 以内。
 
-2. **[DimTransform Code with Pytorch](dim_transform.py)**:
+2. **[DimTransform Code with Pytorch](dim_transform_torch.py)**:
    (参见上文 Instruction Tutorial)
