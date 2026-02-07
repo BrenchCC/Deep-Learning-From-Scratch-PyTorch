@@ -22,7 +22,8 @@ Deep-Learning-From-Scratch-PyTorch/
 ├── chapter_07_attention_mechanism/
 ├── chapter_08_transformer_vanilla/
 ├── chapter_09_efficient_attention/
-└── chapter_10_llm_modern_components/
+├── chapter_10_llm_modern_components/
+└── sutskever-implementations/
 ```
 
 ## 快速开始 🚀
@@ -57,6 +58,7 @@ python chapter_01_tensor_autograd/autograd.py
 | 08 Transformer | 🚧 | 编码器-解码器 | `chapter_08_transformer_vanilla/` |
 | 09 高效注意力 | 🚧 | 线性/稀疏注意力 | `chapter_09_efficient_attention/` |
 | 10 LLM 组件 | 🚧 | 现代 LLM 关键组件 | `chapter_10_llm_modern_components/` |
+| Sutskever 实验 01 | ✅ | 复杂动力学 / 信息熵 | `sutskever-implementations/01_complexity_dynamics/README.md` |
 
 ## 章节运行命令 🧪
 ### Chapter 01: 计算图与自动微分
@@ -147,6 +149,19 @@ python chapter_06_rnn_lstm_seq/main.py --epochs 50 --batch_size 32 --lr 0.001
 ```bash
 # 开发中：代码结构已就绪，后续会补齐可运行脚本
 ```
+
+## Sutskever Implementations
+该目录为**特殊实验区**，用于复现 Ilya Sutskever 相关论文/观点的直观实验与可视化，后续将持续更新。
+
+运行脚本示例：
+```bash
+# 01 复杂动力学第一定律
+python sutskever-implementations/01_complexity_dynamics/complexity_dynamics.py
+```
+
+当前已包含：
+- **01 复杂动力学第一定律**：元胞自动机 + 咖啡混合实验，展示复杂性增长与熵增。
+- 入口：`sutskever-implementations/01_complexity_dynamics/README.md`
 
 ## 贡献指南 🤝
 1. `git checkout -b feature/YourFeature`
