@@ -1,0 +1,2 @@
+# Sutskever Complete Implementation
+对Ilya Sutskever推荐的一些基础论文进行了全面的nano实现。
