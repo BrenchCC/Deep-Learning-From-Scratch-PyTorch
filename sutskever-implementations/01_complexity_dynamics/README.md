@@ -8,6 +8,7 @@
 2. **咖啡扩散二维混合**：集中状态 → 均匀混合（不可逆）
 
 这与深度学习中的表征复杂度、信息熵与不可逆性直接相关。
+目录同时提供 `01_complexity_dynamics.ipynb`（实验记录）与 `complexity_dynamics.py`（可复现脚本）。
 
 > [!NOTE]
 > 如果你刚入门深度学习，可以把“复杂度”理解为：模型对同一类输入能描述出更多细节和差异的能力。训练过程就是让这种能力逐步提升。
@@ -85,6 +86,9 @@ Shannon 熵衡量系统无序度。随着演化推进，状态分布趋于更均
 python sutskever-implementations/01_complexity_dynamics/complexity_dynamics.py
 ```
 
+> [!NOTE]
+> 如果你使用 Conda，建议统一改为 `conda run -n <ENV_NAME> python ...`，这样更容易复现实验结果。
+
 常用参数：
 - `--seed`
 - `--ca-size` / `--ca-steps`
@@ -92,6 +96,9 @@ python sutskever-implementations/01_complexity_dynamics/complexity_dynamics.py
 - `--output-dir`
 - `--no-save`
 - `--show`
+
+> [!TIP]
+> 建议先用默认参数跑通，再逐步调大 `--ca-steps` 和 `--diffusion-steps` 观察复杂度与熵曲线的变化趋势。
 
 ---
 
@@ -101,3 +108,6 @@ python sutskever-implementations/01_complexity_dynamics/complexity_dynamics.py
 3. **不可逆性**：复杂状态难以逆向回到简单初态。
 
 这些结论为理解深度学习中“表征复杂度随训练增强”的现象提供直观解释。
+
+> [!NOTE]
+> 这里的实验是“机制演示”而非严格物理仿真，重点是帮助建立可迁移到深度学习训练过程的直觉。

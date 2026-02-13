@@ -1,0 +1,52 @@
+[
+  {
+    "iteration": 0,
+    "loss": 79.45134068239935,
+    "sample": "hxrncc vnr\nyudddflifocfhitdln\nod xytfapial\nwepflmdysxwnw d\ngheuhelct ysd\nurrs havog fgrowlarsmslli\na"
+  },
+  {
+    "iteration": 200,
+    "loss": 75.13535719795327,
+    "sample": "fo lharp  eattlorks nitaenms\nhead oeronssaran\nineataenyirrlleng deel\nlearan neuce soing\nheers eatwor"
+  },
+  {
+    "iteration": 400,
+    "loss": 64.7242889267018,
+    "sample": "\n\nexa\n\nhello deep neural nitworks\nheea leorm levroininformaepynhirmp help networks\nheap in ceoa lear"
+  },
+  {
+    "iteration": 600,
+    "loss": 54.20147991288103,
+    "sample": "les hellon date daelernmttormatiin\n\nnttarns\ninearo netro leppeepyoxpcep dhelp networks\nneutaleniok h"
+  },
+  {
+    "iteration": 800,
+    "loss": 45.0407738025347,
+    "sample": "ormatio wepro leor neural networks\nneuralpneupworks loar learning\ndeep neurol seteerns\nleurll networ"
+  },
+  {
+    "iteration": 1000,
+    "loss": 37.39048829821716,
+    "sample": "ello lexpmples\nexamples help nevworrs\neatterns\npatterns in data\ndata drives learning\nlearning from e"
+  },
+  {
+    "iteration": 1200,
+    "loss": 30.981874069139867,
+    "sample": "s\nnetworks\nnetworks learn patterns\npatterns in data\ndata drives learning\nlearning from examples\nexam"
+  },
+  {
+    "iteration": 1400,
+    "loss": 25.56617687253546,
+    "sample": "data prives learning\ndeep neural networks\nneural networks learn ngtworks\nnetworks networks\nneural ne"
+  },
+  {
+    "iteration": 1600,
+    "loss": 21.552675346320726,
+    "sample": "es\nhelp networks\nnetw\nrks neural networks learning\ndata dnepworks lerywhere\neverywhere ynfrrmation\ni"
+  },
+  {
+    "iteration": 1800,
+    "loss": 17.85445041152094,
+    "sample": "rmation is everywhere\neverywherep nearning\nlea neural neta\nhello deep learning\ndeep neural networks\n"
+  }
+]
