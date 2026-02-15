@@ -57,7 +57,8 @@ python chapter_01_tensor_autograd/autograd.py
 | 实验 | 状态 | 主题 | 入口 |
 |------|------|------|------|
 | 01 Complexity Dynamics | ✅ | 元胞自动机复杂性增长 / 熵增 / 不可逆性 | `sutskever-implementations/01_complexity_dynamics/README.md` |
-| 02 Char RNN (Karpathy) | ✅ | Vanilla RNN 字符级建模 / BPTT / 采样 | `sutskever-implementations/02_char_rnn_karpathy/README.md` |
+| 02 Char RNN (Karpathy) | ✅ | Vanilla RNN 字符级建模 / BPTT / 梯度裁剪 | `sutskever-implementations/02_char_rnn_karpathy/README.md` |
+| 03 Understanding LSTM | ✅ | 门控记忆 / 状态可视化 / 梯度流对比 | `sutskever-implementations/03_lstm_understanding/README.md` |
 
 运行示例：
 ```bash
@@ -66,6 +67,9 @@ python sutskever-implementations/01_complexity_dynamics/complexity_dynamics.py
 
 # 02 字符级 RNN
 python sutskever-implementations/02_char_rnn_karpathy/02_char_rnn_karpathy.py
+
+# 03 LSTM 机制理解
+python sutskever-implementations/03_lstm_understanding/03_lstm_understanding.py
 ```
 
 更多说明见：`sutskever-implementations/README.md`

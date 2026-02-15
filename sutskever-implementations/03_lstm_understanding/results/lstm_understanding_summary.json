@@ -1,0 +1,35 @@
+{
+  "seed": 42,
+  "input_size": 5,
+  "hidden_size": 16,
+  "output_size": 5,
+  "seq_length": 15,
+  "num_samples": 10,
+  "gradient_steps": 30,
+  "save_enabled": true,
+  "show_enabled": false,
+  "figures": [
+    "/Users/brench/brench_project_collections/Self_Learning_Project/Deep-Learning-From-Scratch-PyTorch/sutskever-implementations/03_lstm_understanding/images/lstm_gate_visualization.png",
+    "/Users/brench/brench_project_collections/Self_Learning_Project/Deep-Learning-From-Scratch-PyTorch/sutskever-implementations/03_lstm_understanding/images/lstm_vs_vanilla_rnn_states.png",
+    "/Users/brench/brench_project_collections/Self_Learning_Project/Deep-Learning-From-Scratch-PyTorch/sutskever-implementations/03_lstm_understanding/images/gradient_flow_comparison.png"
+  ],
+  "gate_stats": {
+    "forget_gate_mean": 0.4999970998202869,
+    "input_gate_mean": 0.5000862450699787,
+    "output_gate_mean": 0.4999158688719195,
+    "cell_state_std": 0.0016839165215619901,
+    "hidden_state_std": 0.0008420538008998526
+  },
+  "comparison_stats": {
+    "rnn_hidden_std": 0.00242660831969948,
+    "lstm_hidden_std": 0.0008420538008998526
+  },
+  "gradient_stats": {
+    "rnn_final_gradient": 0.008977364229164094,
+    "lstm_final_gradient": 0.2259355409925655
+  },
+  "model_artifacts": [
+    "/Users/brench/brench_project_collections/Self_Learning_Project/Deep-Learning-From-Scratch-PyTorch/sutskever-implementations/03_lstm_understanding/checkpoints/models/lstm_init_weights.npz",
+    "/Users/brench/brench_project_collections/Self_Learning_Project/Deep-Learning-From-Scratch-PyTorch/sutskever-implementations/03_lstm_understanding/checkpoints/models/vanilla_rnn_init_weights.npz"
+  ]
+}
