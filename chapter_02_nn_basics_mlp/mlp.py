@@ -16,16 +16,7 @@ from tqdm import tqdm
 
 sys.path.append(os.getcwd())
 
-try:
-    from utils import get_device, setup_seed, Timer, log_model_info
-except ImportError:
-    # Fallback if utils not present
-    def get_device(): return torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-    def setup_seed(seed): torch.manual_seed(seed); np.random.seed(seed)
-    class Timer: 
-        def __enter__(self): pass 
-        def __exit__(self, *args): pass
-    def log_model_info(model): pass
+from utils import get_device, setup_seed, Timer, log_model_info, configure_logging
 
 # 1. Global Logger Configuration
 logger = logging.getLogger("MLP-Demo-MultiDim")
@@ -179,13 +170,15 @@ def train_model(
 
     with Timer():
         for epoch in pbar:
-            # Forward
+            # Step 1: Forward
             y_pred = model(x_train)
             loss = criterion(input = y_pred, target = y_train)
 
-            # Backward
+            # Step 2: Clear previous gradients
             optimizer.zero_grad()
+            # Step 3: Backward
             loss.backward()
+            # Step 4: Update parameters
             optimizer.step()
 
             # Update tqdm
@@ -362,32 +355,15 @@ def parse_args():
 
     return parser.parse_args()
 
-def mlp_demo():
+def prepare_data(args):
     """
-    Main execution pipeline.
+    Prepare training/test data according to input_dim and mode.
     """
-    logging.basicConfig(
-        level = logging.INFO,
-        format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers = [logging.StreamHandler()],
-        datefmt = '%Y-%m-%d %H:%M:%S'
-    )
-    
-    # Argument Parsing
-    args = parse_args()
-    logger.info(f"Arguments parsed: {vars(args)}")
-
-    # Setup seed and device
-    setup_seed(seed = args.seed)
-    device = get_device()
-    
-    # Data Generation Strategy based on Input Dim
     if args.input_dim == 1:
-        # --- 1D Logic (Original) ---
         if args.mode == "standard":
             train_start, train_end = -np.pi, np.pi
             test_start, test_end = -np.pi, np.pi
-        elif args.mode == "extrapolate":
+        else:
             train_start, train_end = -np.pi, 0.0
             test_start, test_end = -np.pi, np.pi
 
@@ -397,18 +373,15 @@ def mlp_demo():
             n_samples = args.n_samples,
             save_path = os.path.join(args.save_dir, "data", f"1d_{args.mode}_train.txt")
         )
-        # Test data for 1D
         x_test, y_test = generate_sine_data(
             start = test_start,
             end = test_end,
-            n_samples = 300, 
+            n_samples = 300,
             noise_std = 0.0,
             save_path = None
         )
-
-    elif args.input_dim == 2:
-        # --- 2D Logic (New) ---
-        # Note: 'extrapolate' logic for 2D is simplified here to just random sampling range
+        data_tag = f"1d_{args.mode}"
+    else:
         x_train, y_train = generate_surface_data(
             n_samples = args.n_samples,
             range_min = -3.0,
@@ -416,18 +389,28 @@ def mlp_demo():
             noise_std = 0.1,
             save_path = os.path.join(args.save_dir, "data", "2d_surface_train.txt")
         )
-        # x_test/y_test not explicitly needed for 3D vis function as it generates its own mesh
         x_test, y_test = None, None
+        data_tag = "2d_surface"
 
-    # Model Initialization (Dynamic Input Dim)
+    logger.info(f"Data prepared with tag = {data_tag}")
+    return x_train, y_train, x_test, y_test, data_tag
+
+def build_model(args):
+    """
+    Build model according to parsed arguments.
+    """
     model = MLP(
         input_dim = args.input_dim,
         hidden_dim = args.hidden_dim,
         output_dim = 1
     )
     log_model_info(model = model)
+    return model
 
-    # Training
+def train_pipeline(args, model, x_train, y_train, device):
+    """
+    Run training phase.
+    """
     train_model(
         model = model,
         x_train = x_train,
@@ -437,7 +420,10 @@ def mlp_demo():
         device = device
     )
 
-    # Visualization & Saving
+def visualize_pipeline(args, model, x_train, y_train, x_test, y_test, device):
+    """
+    Run visualization phase and return output image path.
+    """
     if args.input_dim == 1:
         vis_path = os.path.join(args.save_dir, "images", f"mlp_1d_{args.mode}_result.png")
         visualize_results(
@@ -450,7 +436,7 @@ def mlp_demo():
             save_path = vis_path,
             device = device
         )
-    elif args.input_dim == 2:
+    else:
         vis_path = os.path.join(args.save_dir, "images", "mlp_2d_surface_result.png")
         visualize_3d_results(
             model = model,
@@ -459,12 +445,73 @@ def mlp_demo():
             save_path = vis_path,
             device = device
         )
+    logger.info(f"Visualization phase finished. File = {vis_path}")
+    return vis_path
 
-    # Save Model Checkpoint
+def save_model_checkpoint(args, model):
+    """
+    Save model checkpoint and return file path.
+    """
     model_path = os.path.join(args.save_dir, "models", f"mlp_{args.input_dim}d.pth")
     os.makedirs(os.path.dirname(model_path), exist_ok = True)
     torch.save(model.state_dict(), model_path)
     logger.info(f"Model saved to {model_path}")
+    return model_path
+
+def mlp_demo():
+    """
+    Main execution pipeline.
+    """
+    configure_logging()
+    
+    # Argument Parsing
+    args = parse_args()
+    logger.info(f"Arguments parsed: {vars(args)}")
+
+    # Setup seed and device
+    setup_seed(seed = args.seed)
+    device = get_device()
+    
+    logger.info("=" * 80)
+    logger.info("Phase 1/5: Prepare Data")
+    logger.info("=" * 80)
+    x_train, y_train, x_test, y_test, data_tag = prepare_data(args = args)
+
+    logger.info("=" * 80)
+    logger.info("Phase 2/5: Build Model")
+    logger.info("=" * 80)
+    model = build_model(args = args)
+
+    logger.info("=" * 80)
+    logger.info("Phase 3/5: Train Model")
+    logger.info("=" * 80)
+    train_pipeline(
+        args = args,
+        model = model,
+        x_train = x_train,
+        y_train = y_train,
+        device = device
+    )
+
+    logger.info("=" * 80)
+    logger.info("Phase 4/5: Visualize Results")
+    logger.info("=" * 80)
+    vis_path = visualize_pipeline(
+        args = args,
+        model = model,
+        x_train = x_train,
+        y_train = y_train,
+        x_test = x_test,
+        y_test = y_test,
+        device = device
+    )
+
+    logger.info("=" * 80)
+    logger.info("Phase 5/5: Save Model")
+    logger.info("=" * 80)
+    model_path = save_model_checkpoint(args = args, model = model)
+
+    logger.info(f"Run summary -> data_tag = {data_tag}, vis = {vis_path}, model = {model_path}")
 
 if __name__ == "__main__":
     mlp_demo()
