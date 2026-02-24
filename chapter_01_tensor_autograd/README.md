@@ -1,5 +1,45 @@
 # Chapter 01: Computational Graph & Autograd - Theoretical Review
 
+## 3分钟先读（零基础导读）
+- 本章只回答一个问题：`loss.backward()` 到底在做什么。
+- 你会看到三组示例：标量链式法则、矩阵 VJP、四层网络完整反向传播。
+- 学习顺序建议：
+  1. 先跑代码看日志结果；
+  2. 再看公式；
+  3. 最后对照计算图图片理解梯度回传方向。
+
+## 术语速查（本章高频）
+| 术语 | 一句话解释 |
+|---|---|
+| 计算图（Computational Graph） | 把运算写成有向无环图（DAG）的结构化表示 |
+| 叶子节点（Leaf Tensor） | 直接可训练参数或输入，一般需要 `requires_grad = True` |
+| `grad_fn` | PyTorch 记录“这个张量由哪个运算产生”的反向入口 |
+| 链式法则（Chain Rule） | 复合函数求导的核心规则 |
+| VJP | 向量与雅可比转置的乘积，反向传播的工程核心 |
+| `backward()` | 从 loss 向图中上游节点传播梯度 |
+
+## 理论 -> 代码映射表
+| 理论主题 | 对应代码位置 | 你会看到什么 |
+|---|---|---|
+| 标量链式法则 | `SimpleScalarGraph` in `autograd.py` | `z = x*y + sin(x)` 的手推梯度与 autograd 对齐 |
+| 矩阵 VJP | `ComplexMatrixGraph` in `autograd.py` | `Y = XW + b` 的 `dL/dX, dL/dW, dL/db` 验证 |
+| 多层网络反传 | `FourLayerNetWithLoss` in `autograd.py` | 四层网络每层梯度与手推结果对比 |
+| 计算图可视化 | `build_dot(...)` in `graph_visualization.py` | 导出 `four_layer_autograd_graph.png` |
+
+## 常见误区 + 最小运行命令
+### 常见误区
+- 误区 1：`forward()` 之后参数就有梯度。  
+  正解：必须执行 `backward()`，`.grad` 才会被填充。
+- 误区 2：矩阵求导要显式构造 Jacobian。  
+  正解：工程上通常使用 VJP，不直接构造完整 Jacobian。
+- 误区 3：只看 loss 数值就算理解反向传播。  
+  正解：要看中间张量和梯度形状是否匹配。
+
+### 最小运行命令
+```bash
+python chapter_01_tensor_autograd/autograd.py
+```
+
 ## 1. 前言：深度学习的“引擎”
 
 欢迎来到第一章。在编写任何具体的神经网络代码之前，作为一名算法工程师，我们需要深刻理解深度学习框架背后的核心引擎：**计算图(Computational Graph)** 与 **自动微分(Automatic Differentiation, AD)**。

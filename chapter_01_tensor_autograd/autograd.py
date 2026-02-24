@@ -6,7 +6,8 @@ import logging
 import torch
 
 sys.path.append(os.getcwd())
-from utils import setup_seed, get_device, Timer, build_dot
+from utils import setup_seed, get_device, Timer
+from chapter_01_tensor_autograd.graph_visualization import build_dot
 
 logger = logging.getLogger("Chapter01_Tensor_Autograd")
 
@@ -73,24 +74,43 @@ class SimpleScalarGraph:
             return grad_x_manual, grad_y_manual
 
     def verify(self):
-        """对比 PyTorch Autograd 和 手动推导的结果"""
-        # 1. Run Forward
-        _ = self.forward()
-        
-        # 2. Run PyTorch Autograd
-        # backward() 从根节点 z 开始反向传播
+        """Verify scalar autograd flow with explicit steps."""
+        logger.info("-" * 60)
+        logger.info("[Scalar Graph] Step 1/4: Forward Result")
+        logger.info("-" * 60)
+        z = self.forward()
+        logger.info(f"[Scalar Graph] x = {self.x.item():.4f}, y = {self.y.item():.4f}")
+        logger.info(f"[Scalar Graph] a = x * y = {self.a.item():.4f}")
+        logger.info(f"[Scalar Graph] b = sin(x) = {self.b.item():.4f}")
+        logger.info(f"[Scalar Graph] z = a + b = {z.item():.4f}")
+
+        logger.info("-" * 60)
+        logger.info("[Scalar Graph] Step 2/4: Autograd Gradients")
+        logger.info("-" * 60)
+        if self.x.grad is not None:
+            self.x.grad.zero_()
+        if self.y.grad is not None:
+            self.y.grad.zero_()
         self.z.backward()
-        
-        # 3. Run Manual Backward
+        autograd_grads = {"x": self.x.grad.detach().clone(), "y": self.y.grad.detach().clone()}
+        logger.info(f"[Scalar Graph] dL/dx (autograd) = {autograd_grads['x'].item():.6f}")
+        logger.info(f"[Scalar Graph] dL/dy (autograd) = {autograd_grads['y'].item():.6f}")
+
+        logger.info("-" * 60)
+        logger.info("[Scalar Graph] Step 3/4: Manual Gradients")
+        logger.info("-" * 60)
         grad_x_man, grad_y_man = self.manual_backward()
-        
-        # 4. Compare
-        # 使用 allclose 处理浮点数精度误差
-        x_match = torch.allclose(self.x.grad, grad_x_man, atol = 1e-6)
-        y_match = torch.allclose(self.y.grad, grad_y_man, atol = 1e-6)
-        
-        logger.info(f"[Scalar Graph] Grad X Match: {x_match} | PyTorch: {self.x.grad:.4f}, Manual: {grad_x_man:.4f}")
-        logger.info(f"[Scalar Graph] Grad Y Match: {y_match} | PyTorch: {self.y.grad:.4f}, Manual: {grad_y_man:.4f}")
+        manual_grads = {"x": grad_x_man, "y": grad_y_man}
+        logger.info(f"[Scalar Graph] dL/dx (manual) = {manual_grads['x'].item():.6f}")
+        logger.info(f"[Scalar Graph] dL/dy (manual) = {manual_grads['y'].item():.6f}")
+
+        logger.info("-" * 60)
+        logger.info("[Scalar Graph] Step 4/4: Compare Conclusion")
+        logger.info("-" * 60)
+        x_match = torch.allclose(autograd_grads["x"], manual_grads["x"], atol = 1e-6)
+        y_match = torch.allclose(autograd_grads["y"], manual_grads["y"], atol = 1e-6)
+        logger.info(f"[Scalar Graph] Grad X Match: {x_match}")
+        logger.info(f"[Scalar Graph] Grad Y Match: {y_match}")
 
 
 class ComplexMatrixGraph:
@@ -171,41 +191,54 @@ class ComplexMatrixGraph:
             return grad_X_manual, grad_W_manual, grad_b_manual
 
     def verify(self):
-        """验证矩阵求导逻辑"""
-        # 1. Forward
-        logger.info(f"[Matrix Graph] Batch Size: {self.X.shape[0]}")
-        logger.info(f"[Matrix Graph] In_Dim: {self.X.shape[1]}")
-        logger.info(f"[Matrix Graph] Out_Dim: {self.W.shape[1]}")
-
-        logger.info(f"[Matrix Graph] X shape: {self.X.shape}")
-        logger.info(f"[Matrix Graph] X: {self.X}")
-        logger.info(f"[Matrix Graph] W shape: {self.W.shape}")
-        logger.info(f"[Matrix Graph] W: {self.W}")
-        logger.info(f"[Matrix Graph] b shape: {self.b.shape}")
-        logger.info(f"[Matrix Graph] b: {self.b}")
-        logger.info(f"[Matrix Graph] Upstream Grad: {self.upstream_grad}")
+        """Verify matrix VJP flow with explicit steps."""
+        logger.info("-" * 60)
+        logger.info("[Matrix Graph] Step 1/4: Forward Result")
+        logger.info("-" * 60)
         Y = self.forward()
-        logger.info(f"[Matrix Graph] Forward Output Shape: {Y.shape}")
-        logger.info(f"[Matrix Graph] Y: {Y}")
-        # 2. PyTorch Autograd
-        # 这里我们不定义具体的 Loss 函数，而是直接从 Y 开始反向传播
-        # 传入 gradient 参数等于告诉 PyTorch: "已知 dL/dY = upstream_grad，请继续往前传"
+        logger.info(
+            f"[Matrix Graph] Shapes -> X: {self.X.shape}, W: {self.W.shape}, "
+            f"b: {self.b.shape}, dL/dY: {self.upstream_grad.shape}, Y: {Y.shape}"
+        )
+        logger.info(f"[Matrix Graph] Forward sample Y[0, :5] = {Y[0, :5]}")
+
+        logger.info("-" * 60)
+        logger.info("[Matrix Graph] Step 2/4: Autograd Gradients")
+        logger.info("-" * 60)
+        if self.X.grad is not None:
+            self.X.grad.zero_()
+        if self.W.grad is not None:
+            self.W.grad.zero_()
+        if self.b.grad is not None:
+            self.b.grad.zero_()
         Y.backward(gradient = self.upstream_grad)
-        
-        # 3. Manual Backward
+        autograd_grads = {
+            "X": self.X.grad.detach().clone(),
+            "W": self.W.grad.detach().clone(),
+            "b": self.b.grad.detach().clone(),
+        }
+        logger.info(f"[Matrix Graph] dL/dX sample = {autograd_grads['X'][0, :5]}")
+        logger.info(f"[Matrix Graph] dL/dW sample = {autograd_grads['W'][0, :5]}")
+        logger.info(f"[Matrix Graph] dL/db sample = {autograd_grads['b'][:5]}")
+
+        logger.info("-" * 60)
+        logger.info("[Matrix Graph] Step 3/4: Manual Gradients")
+        logger.info("-" * 60)
         grad_X_man, grad_W_man, grad_b_man = self.manual_backward()
-        
-        # 4. Compare
-        X_match = torch.allclose(self.X.grad, grad_X_man, atol = 1e-5)
-        W_match = torch.allclose(self.W.grad, grad_W_man, atol = 1e-5)
-        b_match = torch.allclose(self.b.grad, grad_b_man, atol = 1e-5)
-        
+        manual_grads = {"X": grad_X_man, "W": grad_W_man, "b": grad_b_man}
+        logger.info(f"[Matrix Graph] dL/dX sample (manual) = {manual_grads['X'][0, :5]}")
+        logger.info(f"[Matrix Graph] dL/dW sample (manual) = {manual_grads['W'][0, :5]}")
+        logger.info(f"[Matrix Graph] dL/db sample (manual) = {manual_grads['b'][:5]}")
+
+        logger.info("-" * 60)
+        logger.info("[Matrix Graph] Step 4/4: Compare Conclusion")
+        logger.info("-" * 60)
+        X_match = torch.allclose(autograd_grads["X"], manual_grads["X"], atol = 1e-5)
+        W_match = torch.allclose(autograd_grads["W"], manual_grads["W"], atol = 1e-5)
+        b_match = torch.allclose(autograd_grads["b"], manual_grads["b"], atol = 1e-5)
         logger.info(f"[Matrix Graph] Grad X Match: {X_match}")
         logger.info(f"[Matrix Graph] Grad W Match: {W_match}")
         logger.info(f"[Matrix Graph] Grad b Match: {b_match}")
-        
-        # 简单的维度检查打印，帮助理解 VJP
-        logger.info(f"Shape Mismatch Debug: W.grad {self.W.grad.shape} vs Manual {grad_W_man.shape}")
 
 class FourLayerNetWithLoss:
     """
@@ -322,11 +355,21 @@ class FourLayerNetWithLoss:
             }
     
     def verify(self):
-        """ PyTorch Autograd 与手写梯度"""
+        """Verify four-layer network gradients with explicit steps."""
+        logger.info("-" * 60)
+        logger.info("[Four Layer Net] Step 1/4: Forward Result")
+        logger.info("-" * 60)
         loss = self.forward()
+        logger.info(f"[Four Layer Net] h1 = {self.h1}")
+        logger.info(f"[Four Layer Net] h2 = {self.h2}")
+        logger.info(f"[Four Layer Net] h3 = {self.h3}")
+        logger.info(f"[Four Layer Net] y_pred = {self.y_pred.item():.6f}, y = {self.y.item():.6f}")
+        logger.info(f"[Four Layer Net] loss = {loss.item():.6f}")
+
+        # Keep graph export logic for teaching how dynamic graph is represented.
         dot = build_dot(
             loss,
-            params={
+            params = {
                 "w1": self.w1,
                 "b1": self.b1,
                 "w2": self.w2,
@@ -335,26 +378,39 @@ class FourLayerNetWithLoss:
                 "b3": self.b3,
             },
         )
-        dot.render("chapter_01_tensor_autograd/four_layer_autograd_graph", cleanup=True)
+        dot.render("chapter_01_tensor_autograd/four_layer_autograd_graph", cleanup = True)
 
+        logger.info("-" * 60)
+        logger.info("[Four Layer Net] Step 2/4: Autograd Gradients")
+        logger.info("-" * 60)
+        for param in [self.w1, self.b1, self.w2, self.b2, self.w3, self.b3]:
+            if param.grad is not None:
+                param.grad.zero_()
         loss.backward()
+        autograd_grads = {
+            "w1": self.w1.grad.detach().clone(),
+            "b1": self.b1.grad.detach().clone(),
+            "w2": self.w2.grad.detach().clone(),
+            "b2": self.b2.grad.detach().clone(),
+            "w3": self.w3.grad.detach().clone(),
+            "b3": self.b3.grad.detach().clone(),
+        }
+        for name in ["w1", "b1", "w2", "b2", "w3", "b3"]:
+            logger.info(f"[Four Layer Net] {name} autograd sample = {autograd_grads[name].flatten()[:3]}")
 
+        logger.info("-" * 60)
+        logger.info("[Four Layer Net] Step 3/4: Manual Gradients")
+        logger.info("-" * 60)
         manual_grads = self.manual_backward()
+        for name in ["w1", "b1", "w2", "b2", "w3", "b3"]:
+            logger.info(f"[Four Layer Net] {name} manual sample = {manual_grads[name].flatten()[:3]}")
 
-        for name, param in [
-            ("w1", self.w1),
-            ("b1", self.b1),
-            ("w2", self.w2),
-            ("b2", self.b2),
-            ("w3", self.w3),
-            ("b3", self.b3),
-        ]:
-            match = torch.allclose(param.grad, manual_grads[name], atol=1e-5)
-            logger.info(
-                f"[Grad Check] {name}: match={match} | "
-                f"autograd={param.grad.flatten()[:3]} | "
-                f"manual={manual_grads[name].flatten()[:3]}"
-            )
+        logger.info("-" * 60)
+        logger.info("[Four Layer Net] Step 4/4: Compare Conclusion")
+        logger.info("-" * 60)
+        for name in ["w1", "b1", "w2", "b2", "w3", "b3"]:
+            match = torch.allclose(autograd_grads[name], manual_grads[name], atol = 1e-5)
+            logger.info(f"[Four Layer Net] Grad Match {name}: {match}")
 
 
 def main():
@@ -369,13 +425,15 @@ def main():
     device = get_device()
     logger.info(f"Running Chapter 01 on device: {device}")
     
-    # 3. Run Simple Scalar Example
-    logger.info("--- Starting Scalar Graph Example ---")
+    logger.info("=" * 80)
+    logger.info("Starting Scalar Graph Example")
+    logger.info("=" * 80)
     scalar_graph = SimpleScalarGraph(x_val = 2.0, y_val = 3.0, device = device)
     scalar_graph.verify()
     
-    # 4. Run Complex Matrix Example
-    logger.info("--- Starting Matrix Graph Example (Linear Layer) ---")
+    logger.info("=" * 80)
+    logger.info("Starting Matrix Graph Example (Linear Layer)")
+    logger.info("=" * 80)
     # 使用 Timer 监测反向传播验证过程
     with Timer("Matrix Autograd Verification"):
         matrix_graph = ComplexMatrixGraph(
@@ -386,8 +444,9 @@ def main():
         )
         matrix_graph.verify()
         
-    # 5. Run a Four-Layer Network Example
-    logger.info("--- Starting Four-Layer Network Example with Loss Function ---")
+    logger.info("=" * 80)
+    logger.info("Starting Four-Layer Network Example with Loss Function")
+    logger.info("=" * 80)
     with Timer("Four-Layer Network Autograd Verification"):
         four_layer_graph = FourLayerNetWithLoss(device = device)
         four_layer_graph.verify()
