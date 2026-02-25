@@ -1,5 +1,44 @@
 # Chapter 03: Optimization & Stability - Theoretical Review
 
+## 3分钟先读（零基础导读）
+- 本章关注两件事：如何更快收敛（优化器）和如何更稳训练（归一化/正则化）。
+- 代码层面对应三类实验：`exp_optimization.py`、`exp_normalization.py`、`exp_regularization.py`。
+- 学习建议：先运行实验看图，再回看公式与理论段落。
+
+## 术语速查（本章高频）
+| 术语 | 一句话解释 |
+|---|---|
+| SGD | 使用当前梯度直接更新参数的基础优化算法 |
+| Momentum | 在 SGD 上加入“历史速度”以减少震荡 |
+| AdamW | 自适应学习率 + 解耦权重衰减 |
+| BatchNorm | 依赖 batch 统计量的归一化方法 |
+| LayerNorm | 对单样本特征维做归一化，常用于 NLP/LLM |
+| Gradient Clipping | 限制梯度范数，防止梯度爆炸 |
+| L1/L2 正则化 | 通过参数惩罚项控制模型复杂度 |
+
+## 理论 -> 代码映射表
+| 理论主题 | 对应代码位置 | 你会看到什么 |
+|---|---|---|
+| SGD/Momentum/AdamW | `optimizers.py` + `exp_optimization.py` | Rosenbrock 路径对比图 |
+| BN/LN/RMSNorm | `normalization.py` + `exp_normalization.py` | 不同 batch 条件下稳定性对比图 |
+| L1/L2 正则化 | `regularization.py` + `exp_regularization.py` | 权重稀疏性与收缩效果图 |
+
+## 常见误区 + 最小运行命令
+### 常见误区
+- 误区 1：AdamW 与 Adam + L2 完全等价。  
+  正解：在自适应优化器下两者并不等价，AdamW 是解耦实现。
+- 误区 2：归一化方法可以随便替换。  
+  正解：不同任务（CV/NLP）和 batch 条件下差异明显。
+- 误区 3：正则化只会降低训练精度。  
+  正解：合理正则化通常提升泛化并降低过拟合风险。
+
+### 最小运行命令
+```bash
+python chapter_03_optimization_regularization/exp_optimization.py
+python chapter_03_optimization_regularization/exp_normalization.py
+python chapter_03_optimization_regularization/exp_regularization.py
+```
+
 ## 章节概述 (Overview)
 
 在 Chapter 02 中，我们通过 MLP 证明了神经网络作为通用函数拟合器的能力。然而，拥有一个强大的架构只是第一步。在深度学习（尤其是大模型训练）中，如何让网络**快速收敛**（Optimization）以及在深层结构中保持**数值稳定**（Stability）是决定模型能否训练成功的关键。

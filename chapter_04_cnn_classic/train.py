@@ -15,17 +15,7 @@ from torch.utils.data import DataLoader
 
 sys.path.append(os.getcwd())
 
-try:
-    from utils import get_device, setup_seed, Timer, log_model_info
-except ImportError:
-    # Fallback if utils not present
-    def get_device(): 
-        return torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-    def setup_seed(seed): torch.manual_seed(seed); np.random.seed(seed)
-    class Timer: 
-        def __enter__(self): pass 
-        def __exit__(self, *args): pass
-    def log_model_info(model): pass
+from utils import get_device, setup_seed, Timer, log_model_info
 
 from chapter_04_cnn_classic.model import SimpleCNN
 

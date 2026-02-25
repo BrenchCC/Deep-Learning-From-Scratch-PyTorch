@@ -17,17 +17,7 @@ sys.path.append(os.getcwd())
 from chapter_06_rnn_lstm_seq.model import DynamicRNNClassifier
 from chapter_06_rnn_lstm_seq.dataset import SyntheticNameDataset, VectorizedCollator
 
-try:
-    from utils import get_device, setup_seed, Timer, save_json, count_parameters, log_model_info
-except ImportError:
-    # Fallback if utils not present
-    def get_device(): 
-        return torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-    def setup_seed(seed): torch.manual_seed(seed); np.random.seed(seed)
-    class Timer: 
-        def __enter__(self): pass 
-        def __exit__(self, *args): pass
-    def log_model_info(model): pass
+from utils import get_device, setup_seed, Timer, save_json, count_parameters, log_model_info
 
 logger = logging.getLogger("RNN_Experiment")
 

@@ -11,10 +11,7 @@ from torchvision import transforms
 # Add root path
 sys.path.append(os.getcwd())
 
-try:
-    from utils import get_device
-except ImportError:
-    def get_device(): return torch.device("cpu")
+from utils import get_device
 
 from chapter_04_cnn_classic.model import SimpleCNN
 

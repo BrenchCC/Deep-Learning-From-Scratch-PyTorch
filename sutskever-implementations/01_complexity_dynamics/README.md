@@ -143,7 +143,7 @@ $$
 
 ## 10. 复现实验命令 (Reproducibility)
 ```bash
-conda run -n <ENV_NAME> python sutskever-implementations/01_complexity_dynamics/complexity_dynamics.py
+python sutskever-implementations/01_complexity_dynamics/complexity_dynamics.py
 ```
 
 常用参数：

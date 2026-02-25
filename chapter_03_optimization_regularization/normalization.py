@@ -40,10 +40,10 @@ class BatchNormalization(nn.Module):
                 mean = x.mean(dim = (0, 2))
                 var = x.var(dim = (0, 2), unbiased = False)
             
-            # Update running stats
+            # Update running stats in-place to keep registered buffers stable.
             # running_mean = (1 - m) * running_mean + m * current_mean
-            self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * mean.detach()
-            self.running_var = (1 - self.momentum) * self.running_var + self.momentum * var.detach()
+            self.running_mean.mul_(1 - self.momentum).add_(mean.detach(), alpha = self.momentum)
+            self.running_var.mul_(1 - self.momentum).add_(var.detach(), alpha = self.momentum)
         else:
             # Use running stats for inference
             mean = self.running_mean

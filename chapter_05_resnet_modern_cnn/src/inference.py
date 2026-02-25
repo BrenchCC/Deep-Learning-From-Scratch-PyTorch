@@ -13,17 +13,7 @@ sys.path.append(os.getcwd())
 from chapter_05_resnet_modern_cnn.src.model import resnet18
 from chapter_05_resnet_modern_cnn.src.cam import GradCAM, show_cam_on_image
 
-try:
-    from utils import get_device, setup_seed, Timer, save_json, count_parameters
-except ImportError:
-    # Fallback if utils not present
-    def get_device(): 
-        return torch.device("mps" if torch.backends.mps.is_available() else "cpu")
-    def setup_seed(seed): torch.manual_seed(seed); np.random.seed(seed)
-    class Timer: 
-        def __enter__(self): pass 
-        def __exit__(self, *args): pass
-    def log_model_info(model): pass
+from utils import get_device, setup_seed, Timer, save_json, count_parameters
 
 
 # STL-10 Classes mapping

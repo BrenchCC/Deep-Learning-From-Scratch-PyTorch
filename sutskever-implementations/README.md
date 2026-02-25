@@ -54,13 +54,13 @@ sutskever-implementations/
 
 ```bash
 # 01: Complexity Dynamics
-conda run -n <ENV_NAME> python sutskever-implementations/01_complexity_dynamics/complexity_dynamics.py
+python sutskever-implementations/01_complexity_dynamics/complexity_dynamics.py
 
 # 02: Char RNN (Karpathy)
-conda run -n <ENV_NAME> python sutskever-implementations/02_char_rnn_karpathy/02_char_rnn_karpathy.py
+python sutskever-implementations/02_char_rnn_karpathy/02_char_rnn_karpathy.py
 
 # 03: LSTM Understanding
-conda run -n <ENV_NAME> python sutskever-implementations/03_lstm_understanding/03_lstm_understanding.py
+python sutskever-implementations/03_lstm_understanding/03_lstm_understanding.py
 ```
 
 ## 产物索引 (Artifacts)

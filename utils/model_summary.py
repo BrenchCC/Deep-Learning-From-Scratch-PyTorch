@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -35,7 +36,6 @@ def estimate_model_size(model: nn.Module):
         float: Estimated size in MB.
     """
     param_count = count_parameters(model, only_trainable = False)
-    # 4 bytes for float32
     size_mb = (param_count * 4) / (1024 ** 2)
     return size_mb
 
@@ -55,7 +55,7 @@ def log_model_info(model: nn.Module):
     logger.info(f"Trainable Parameters: {trainable_params:,}")
     logger.info(f"Estimated Model Size (fp32): {size_mb:.2f} MB")
 
-def log_model_info_from_path(path: str, model: nn.Module = torch.nn.Module()):
+def log_model_info_from_path(path: str, model: Optional[nn.Module] = None):
     """
     Load the model state dictionary from a file.
     
@@ -63,19 +63,20 @@ def log_model_info_from_path(path: str, model: nn.Module = torch.nn.Module()):
         path: Path to the saved model state dictionary.
         model: The PyTorch model instance.
     """
-    model.load_state_dict(torch.load(path))
+    if model is None:
+        raise ValueError("model must be provided when loading state dict from path.")
+
+    model.load_state_dict(torch.load(path, map_location = "cpu"))
     logger.info(f"Model loaded from {path}.")
     log_model_info(model)
     
 if __name__ == "__main__":
-    # --- Logging Setup ---
     logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.StreamHandler()
-        ]
+        level = logging.INFO,
+        format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers = [logging.StreamHandler()]
     )
 
-    model = nn.Linear()
+    model = nn.Linear(10, 2)
+    log_model_info(model)
     

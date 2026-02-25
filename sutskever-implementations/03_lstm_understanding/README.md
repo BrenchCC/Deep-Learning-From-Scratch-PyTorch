@@ -146,7 +146,7 @@ $$
 
 ## 9. 复现实验命令 (Reproducibility)
 ```bash
-conda run -n <ENV_NAME> python sutskever-implementations/03_lstm_understanding/03_lstm_understanding.py
+python sutskever-implementations/03_lstm_understanding/03_lstm_understanding.py
 ```
 
 常用参数：

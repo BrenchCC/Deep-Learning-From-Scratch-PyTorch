@@ -160,12 +160,12 @@ $$
 
 ## 9. 复现实验命令 (Reproducibility)
 ```bash
-conda run -n <ENV_NAME> python sutskever-implementations/02_char_rnn_karpathy/02_char_rnn_karpathy.py
+python sutskever-implementations/02_char_rnn_karpathy/02_char_rnn_karpathy.py
 ```
 
 参数示例：
 ```bash
-conda run -n <ENV_NAME> python sutskever-implementations/02_char_rnn_karpathy/02_char_rnn_karpathy.py \
+python sutskever-implementations/02_char_rnn_karpathy/02_char_rnn_karpathy.py \
   --num-iterations 2000 \
   --seq-length 25 \
   --hidden-size 64 \
