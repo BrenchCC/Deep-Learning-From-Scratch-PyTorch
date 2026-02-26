@@ -8,136 +8,171 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from torchvision import transforms
 
-# Add root path
 sys.path.append(os.getcwd())
-
-from utils import get_device
 
 from chapter_04_cnn_classic.model import SimpleCNN
 
-logger = logging.getLogger("Inference")
+from utils import get_device
+from utils import CIFAR10_STATS
+from utils import CIFAR10_CLASSES
+
+logger = logging.getLogger("CNNInference")
+
+
+def parse_args():
+    """
+    Parse command-line arguments for chapter 04 inference.
+
+    Args:
+        None
+
+    Returns:
+        argparse.Namespace: Parsed inference configuration.
+    """
+    parser = argparse.ArgumentParser(description = "Inference on custom images for chapter 04")
+    parser.add_argument("--img_dir", type = str, default = "./chapter_04_cnn_classic/data/custom_imgs", help = "Folder with images")
+    parser.add_argument("--model_path", type = str, default = "./chapter_04_cnn_classic/results/best_model.pth", help = "Path to trained .pth")
+    parser.add_argument("--output_dir", type = str, default = "./chapter_04_cnn_classic/images", help = "Where to save visualizations")
+    return parser.parse_args()
+
 
 def load_image(image_path, device):
     """
-    Load and preprocess a single image.
-    Resizes the image to 32x32 to match CIFAR-10 model input.
+    Load and preprocess one input image.
+
+    Args:
+        image_path (str): Image path.
+        device (torch.device): Runtime device.
+
+    Returns:
+        tuple: (pil_image, input_tensor)
     """
-    stats = ((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
-    
     transform = transforms.Compose([
-        transforms.Resize((32, 32)), # Force resize
+        transforms.Resize((32, 32)),
         transforms.ToTensor(),
-        transforms.Normalize(*stats)
+        transforms.Normalize(*CIFAR10_STATS)
     ])
-    
+
     try:
-        img_pil = Image.open(image_path).convert("RGB")
-        img_tensor = transform(img_pil).unsqueeze(0) # Add batch dim: (1, 3, 32, 32)
-        return img_pil, img_tensor.to(device)
-    except Exception as e:
-        logger.error(f"Failed to load image {image_path}: {e}")
+        pil_image = Image.open(image_path).convert("RGB")
+        img_tensor = transform(pil_image).unsqueeze(0).to(device)
+        return pil_image, img_tensor
+    except Exception as exc:
+        logger.error(f"Failed to load image {image_path}: {exc}")
         return None, None
+
 
 def visualize_feature_maps(model, img_tensor, save_path):
     """
-    Visualize the output of the first convolutional layer.
+    Visualize feature maps from the first convolution layer.
+
+    Args:
+        model (SimpleCNN): Trained model.
+        img_tensor (torch.Tensor): Input tensor with shape [1, 3, 32, 32].
+        save_path (str): Output path for figure.
+
+    Returns:
+        None
     """
-    # Hook to capture feature maps
     feature_maps = []
-    
-    def hook_fn(module, input, output):
-        feature_maps.append(output)
-    
-    # Register hook on the first conv layer of block1
-    # model.block1[0] is the first Conv2d
+
+    def hook_fn(module, module_input, module_output):
+        """
+        Save first-layer feature maps from forward pass.
+
+        Args:
+            module (torch.nn.Module): Hooked layer.
+            module_input (tuple): Layer input.
+            module_output (torch.Tensor): Layer output.
+
+        Returns:
+            None
+        """
+        del module
+        del module_input
+        feature_maps.append(module_output)
+
     handle = model.block1[0].register_forward_hook(hook_fn)
-    
-    # Forward pass
     with torch.no_grad():
         model(img_tensor)
-        
     handle.remove()
-    
-    # Processing maps: (1, 32, 32, 32) -> (32, 32, 32)
+
     fmap = feature_maps[0].squeeze(0).cpu()
-    
-    # Plotting first 16 channels
     fig, axes = plt.subplots(4, 4, figsize = (10, 10))
     fig.suptitle("Feature Maps (Layer 1 - First 16 Channels)", fontsize = 16)
-    
-    for i in range(16):
-        ax = axes[i // 4, i % 4]
-        ax.imshow(fmap[i], cmap = "viridis")
+
+    for idx in range(16):
+        ax = axes[idx // 4, idx % 4]
+        ax.imshow(fmap[idx], cmap = "viridis")
         ax.axis("off")
-        ax.set_title(f"Channel {i}")
-        
+        ax.set_title(f"Channel {idx}")
+
     plt.tight_layout()
     plt.savefig(save_path)
     plt.close()
     logger.info(f"Feature maps saved to {save_path}")
 
+
 def main():
-    # 1. Argparse
-    parser = argparse.ArgumentParser(description = "Inference on Custom Images")
-    parser.add_argument("--img_dir", type = str, default = "./chapter_04_cnn_classic/data/custom_imgs", help = "Folder with images")
-    parser.add_argument("--model_path", type = str, default = "./chapter_04_cnn_classic/results/best_model.pth", help = "Path to .pth file")
-    parser.add_argument("--output_dir", type = str, default = "./chapter_04_cnn_classic/images", help = "Where to save viz")
-    
-    args = parser.parse_args()
-    
-    # 2. Logging
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
-        
-    logging.basicConfig(
-        level = logging.INFO,
-        format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers = [logging.StreamHandler()]
-    )
-    
+    """
+    Main inference entry for chapter 04.
+
+    Args:
+        None
+
+    Returns:
+        None
+    """
+    args = parse_args()
+    os.makedirs(args.output_dir, exist_ok = True)
+
     device = get_device()
-    classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-    
-    # 3. Load Model
-    logger.info(f"Loading model from {args.model_path}...")
-    model = SimpleCNN(num_classes = 10).to(device)
-    
-    if os.path.exists(args.model_path):
-        model.load_state_dict(torch.load(args.model_path, map_location = device))
-        model.eval()
-    else:
-        logger.error("Model file not found! Please run train_cifar.py first.")
+    logger.info(f"Using device: {device}")
+
+    if not os.path.exists(args.model_path):
+        logger.error(f"Model file not found: {args.model_path}. Please run training first.")
         return
 
-    # 4. Process Images
+    model = SimpleCNN(num_classes = len(CIFAR10_CLASSES)).to(device)
+    state_dict = torch.load(args.model_path, map_location = device)
+    model.load_state_dict(state_dict)
+    model.eval()
+    logger.info(f"Loaded model from {args.model_path}")
+
     if not os.path.exists(args.img_dir):
-        logger.error(f"Image directory {args.img_dir} does not exist.")
+        logger.error(f"Image directory does not exist: {args.img_dir}")
         return
 
-    image_files = [f for f in os.listdir(args.img_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
-    logger.info(f"Found {len(image_files)} images.")
+    image_files = [file_name for file_name in os.listdir(args.img_dir) if file_name.lower().endswith((".png", ".jpg", ".jpeg"))]
+    if len(image_files) == 0:
+        logger.warning(f"No images found in {args.img_dir}")
+        return
 
-    for img_file in image_files:
-        img_path = os.path.join(args.img_dir, img_file)
-        pil_img, img_tensor = load_image(img_path, device)
-        
-        if img_tensor is None: continue
-        
-        # Inference
+    logger.info(f"Found {len(image_files)} images.")
+    for image_file in image_files:
+        image_path = os.path.join(args.img_dir, image_file)
+        _, image_tensor = load_image(image_path, device)
+        if image_tensor is None:
+            continue
+
         with torch.no_grad():
-            outputs = model(img_tensor)
+            outputs = model(image_tensor)
             probs = torch.nn.functional.softmax(outputs, dim = 1)
-            conf, pred = torch.max(probs, 1)
-            
-        pred_class = classes[pred.item()]
-        confidence = conf.item() * 100
-        
-        logger.info(f"Image: {img_file} | Prediction: {pred_class} ({confidence:.2f}%)")
-        
-        # Visualize Feature Maps
-        save_name = os.path.splitext(img_file)[0] + "_feature_map.png"
+            confidence, prediction = torch.max(probs, dim = 1)
+
+        pred_label = CIFAR10_CLASSES[prediction.item()]
+        pred_confidence = confidence.item() * 100.0
+        logger.info(f"Image: {image_file} | Prediction: {pred_label} ({pred_confidence:.2f}%)")
+
+        save_name = os.path.splitext(image_file)[0] + "_feature_map.png"
         save_path = os.path.join(args.output_dir, save_name)
-        visualize_feature_maps(model, img_tensor, save_path)
+        visualize_feature_maps(model, image_tensor, save_path)
+
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level = logging.INFO,
+        format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers = [logging.StreamHandler()]
+    )
     main()

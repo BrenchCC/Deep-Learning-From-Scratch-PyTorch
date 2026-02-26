@@ -1,5 +1,49 @@
 # Chapter 04: Feature Extraction - Convolutional Neural Networks (CNN)
 
+## 0. 小白先读（3-5 分钟）
+如果你是第一次接触 CNN，这一章只要先抓住三件事：
+1. 卷积层负责提取局部特征（边缘、纹理、形状）。
+2. 池化或步长卷积负责压缩尺寸，降低计算量。
+3. 训练脚本会把“数据 -> 模型 -> 损失 -> 反向传播 -> 指标保存”串起来。
+
+### 0.1 先跑再学（最小命令）
+```bash
+# 训练 1 个 epoch 快速验证流程
+python chapter_04_cnn_classic/train.py --epochs 1 --batch_size 64
+
+# 推理 + 第一层特征图可视化
+python chapter_04_cnn_classic/inference.py --img_dir ./chapter_04_cnn_classic/data/custom_imgs
+```
+完整代码级讲解见：`chapter_04_cnn_classic/CODE_LOGIC_README.md`
+
+### 0.2 术语速查表
+| 术语 | 一句话解释 |
+| :--- | :--- |
+| Convolution | 用一个小窗口在图像上滑动提取局部模式。 |
+| Kernel/Filter | 卷积层里可学习的小权重矩阵。 |
+| Feature Map | 卷积后得到的特征响应图。 |
+| Receptive Field | 某个输出点在输入上“看到”的区域大小。 |
+| Stride | 卷积窗口每次移动的步长。 |
+| Padding | 在边缘补零（或其他值）以控制输出尺寸。 |
+| BatchNorm | 稳定训练分布、加速收敛的归一化层。 |
+| Logits | 最后一层线性输出，未经过 softmax。 |
+
+### 0.3 这章代码入口在哪
+| 文件 | 作用 | 入口函数 |
+| :--- | :--- | :--- |
+| `train.py` | 训练主流程与指标保存 | `main()` |
+| `model.py` | `SimpleCNN` 网络定义 | `SimpleCNN.forward()` |
+| `inference.py` | 单图推理与特征图可视化 | `main()` |
+| `demo_conv_math.py` | 手写卷积数值演示 | `main()` |
+
+### 0.4 通俗桥接
+可以把 CNN 想成“逐层滤镜系统”：前几层看边缘，中间层看纹理，后几层看语义组合。训练就是不断调整这些滤镜参数，让模型更容易区分不同类别。
+
+### 0.5 常见误区与排错
+1. 误区：训练准确率高就一定泛化好。排错：同时看验证集指标（`val_acc`），不要只看训练集。
+2. 误区：输入尺寸随意改。排错：本章模型默认输入 `32x32`，推理脚本会自动 resize。
+3. 误区：推理类别顺序自己写一个就行。排错：类别顺序必须和训练数据一致，否则标签会错位。
+
 ## 1. 核心原理 (Core Principles)
 ### 1.1 卷积与互相关 (Convolution vs Cross-correlation)
 ![image](sources/theory_01_conv_vs_cross_correlation.png)
