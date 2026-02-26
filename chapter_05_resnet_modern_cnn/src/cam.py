@@ -1,128 +1,167 @@
 """
-src/cam.py
-Implementation of Grad-CAM (Gradient-weighted Class Activation Mapping).
-Allows visualizing which parts of the image contributed most to the model's prediction.
+Implementation of Grad-CAM for model interpretability.
 """
-import os
-import sys
+
 import cv2
 import numpy as np
-import torch 
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-sys.path.append(os.getcwd())
-
-from chapter_05_resnet_modern_cnn.src.model import ResNet
 
 class GradCAM:
     """
-    Grad-CAM helper class.
-    
-    Args:
-        model (nn.Module): The CNN model (e.g., ResNet).
-        target_layer (nn.Module): The specific layer to visualize (usually the last Conv layer).
+    Grad-CAM helper class that captures activations and gradients of a target layer.
     """
-    def __init__(self, model: ResNet, target_layer: torch.nn.Module):
+
+    def __init__(self, model: nn.Module, target_layer: nn.Module):
+        """
+        Initialize Grad-CAM hooks.
+
+        Args:
+            model (nn.Module): Classification model.
+            target_layer (nn.Module): Layer to visualize.
+        """
         self.model = model
         self.target_layer = target_layer
         self.gradients = None
         self.activations = None
+        self._handles = []
+        self._register_hooks()
 
-        # Register hooks to capture data during forward/backward pass
-        # 1. Capture the feature map (Forward)
-        target_layer.register_forward_hook(self.save_activation)
-        # 2. Capture the gradients (Backward)
-        target_layer.register_full_backward_hook(self.save_gradient)
-    
-    def save_activation(self, module, input, output):
+    def _register_hooks(self):
         """
-        Hook callback to save forward feature maps.
+        Register forward/backward hooks on target layer.
+
+        Args:
+            None
+
+        Returns:
+            None
         """
-        self.activations = output
-    
-    def save_gradient(self, module, grad_input, grad_output):
+        self._handles.append(self.target_layer.register_forward_hook(self._save_activation))
+        self._handles.append(self.target_layer.register_full_backward_hook(self._save_gradient))
+
+    def _save_activation(self, module, module_input, module_output):
         """
-        Hook callback to save backward gradients.
+        Save forward activations.
+
+        Args:
+            module (nn.Module): Hooked module.
+            module_input (tuple): Input of hooked module.
+            module_output (torch.Tensor): Output of hooked module.
+
+        Returns:
+            None
         """
+        del module
+        del module_input
+        self.activations = module_output
+
+    def _save_gradient(self, module, grad_input, grad_output):
+        """
+        Save backward gradients.
+
+        Args:
+            module (nn.Module): Hooked module.
+            grad_input (tuple): Gradient wrt module input.
+            grad_output (tuple): Gradient wrt module output.
+
+        Returns:
+            None
+        """
+        del module
+        del grad_input
         self.gradients = grad_output[0]
-    
+
+    def close(self):
+        """
+        Remove all registered hooks.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        for handle in self._handles:
+            handle.remove()
+        self._handles = []
+
     def __call__(self, x, class_idx = None):
-            """
-            Generates the heatmap for a specific input and target class.
-            
-            Args:
-                x (Tensor): Input image tensor [1, C, H, W].
-                class_idx (int, optional): The target class index. 
-                                        If None, uses the highest predicted class.
-            
-            Returns:
-                heatmap (np.array): The raw heatmap (0-1).
-                result_class (int): The predicted or target class index.
-            """
-            # 1. Forward Pass
-            output = self.model(x)
-            
-            if class_idx is None:
-                # Get the index of the max log-probability
-                class_idx = output.argmax(dim = 1).item()
-            
-            # 2. Backward Pass (Clear previous grads first)
-            self.model.zero_grad()
-            
-            # Create a one-hot target tensor to backpropagate specific class
-            one_hot_target = torch.zeros_like(output)
-            one_hot_target[0][class_idx] = 1
-            
-            # Trigger backward to compute gradients w.r.t features
-            output.backward(gradient = one_hot_target, retain_graph = True)
-            
-            # 3. Generate CAM
-            # Gradients shape: [1, 512, H, W] -> Pooled Weight: [1, 512, 1, 1]
-            pooled_gradients = torch.mean(self.gradients, dim = [0, 2, 3])
-            
-            # Activations shape: [1, 512, H, W]
-            activations = self.activations.detach()
-            
-            # Weight the channels (batteries included broadcasting)
-            # We loop to avoid complex broadcasting dimensions for readability
-            for i in range(activations.shape[1]):
-                activations[:, i, :, :] *= pooled_gradients[i]
-                
-            # Average the channels to get 2D heatmap: [1, H, W]
-            heatmap = torch.mean(activations, dim = 1).squeeze()
-            
-            # Apply ReLU (We only care about positive influence)
-            heatmap = F.relu(heatmap)
-            
-            # Normalize to 0-1
-            heatmap = heatmap.cpu().numpy()
-            heatmap /= np.max(heatmap) + 1e-8 # Avoid div by zero
-            
-            return heatmap, class_idx
+        """
+        Generate Grad-CAM heatmap.
+
+        Args:
+            x (torch.Tensor): Input tensor [1, C, H, W].
+            class_idx (int | None): Target class index. If None, use predicted class.
+
+        Returns:
+            tuple: (heatmap, class_idx)
+        """
+        outputs = self.model(x)
+        if class_idx is None:
+            class_idx = outputs.argmax(dim = 1).item()
+
+        self.model.zero_grad(set_to_none = True)
+        one_hot_target = torch.zeros_like(outputs)
+        one_hot_target[0, class_idx] = 1
+        outputs.backward(gradient = one_hot_target, retain_graph = True)
+
+        if self.gradients is None or self.activations is None:
+            raise RuntimeError("GradCAM hooks did not capture gradients or activations")
+
+        pooled_gradients = torch.mean(self.gradients, dim = (0, 2, 3))
+        activations = self.activations.detach().clone()
+
+        for channel_idx in range(activations.shape[1]):
+            activations[:, channel_idx, :, :] *= pooled_gradients[channel_idx]
+
+        heatmap = torch.mean(activations, dim = 1).squeeze()
+        heatmap = F.relu(heatmap)
+        heatmap = heatmap.cpu().numpy()
+
+        max_value = float(np.max(heatmap))
+        if max_value > 0.0:
+            heatmap = heatmap / max_value
+        else:
+            heatmap = np.zeros_like(heatmap)
+
+        return heatmap, class_idx
+
+    def __del__(self):
+        """
+        Ensure hooks are removed when object is deleted.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        self.close()
 
 
 def show_cam_on_image(img_path, heatmap, save_path, alpha = 0.5):
     """
-    Overlay the heatmap on the original image.
-    
+    Overlay Grad-CAM heatmap on original image.
+
     Args:
-        img_path (str): Path to original image.
-        heatmap (np.array): The 2D heatmap.
-        save_path (str): Path to save the result.
-        alpha (float): Transparency factor.
+        img_path (str): Input image path.
+        heatmap (np.ndarray): Heatmap in [0, 1].
+        save_path (str): Output image path.
+        alpha (float): Overlay alpha factor.
+
+    Returns:
+        None
     """
-    # Load original image
-    img = cv2.imread(img_path)
-    img = cv2.resize(img, (96, 96)) # Resize to match model input for visualization
-    
-    # Resize heatmap to image size
-    heatmap = cv2.resize(heatmap, (img.shape[1], img.shape[0]))
-    
-    # Convert to RGB heatmap (JET colormap is standard for heatmaps)
-    heatmap = np.uint8(255 * heatmap)
-    heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
-    
-    # Overlay
-    superimposed_img = heatmap * alpha + img
-    cv2.imwrite(save_path, superimposed_img)
+    image = cv2.imread(img_path)
+    image = cv2.resize(image, (96, 96))
+
+    resized_heatmap = cv2.resize(heatmap, (image.shape[1], image.shape[0]))
+    resized_heatmap = np.uint8(255 * resized_heatmap)
+    colored_heatmap = cv2.applyColorMap(resized_heatmap, cv2.COLORMAP_JET)
+
+    superimposed_image = colored_heatmap * alpha + image
+    superimposed_image = np.clip(superimposed_image, 0, 255).astype(np.uint8)
+    cv2.imwrite(save_path, superimposed_image)

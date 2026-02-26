@@ -1,5 +1,51 @@
 # Chapter 05: Solving Vanishing Gradient - ResNet & CNN Evolution (Theory Review)
 
+## 0. 小白先读（3-5 分钟）
+这一章核心是“为什么网络更深不一定更好，以及 ResNet 如何解决它”。
+先抓住三点：
+1. 深层网络会出现优化困难（退化问题）。
+2. 残差连接把学习目标从 `H(x)` 变成 `F(x) = H(x) - x`。
+3. 代码里可以一键切换 `use_residual = True/False`，直接对比效果。
+
+### 0.1 先跑再学（最小命令）
+```bash
+# 对比 ResNet 与 PlainNet（1 epoch 冒烟）
+python chapter_05_resnet_modern_cnn/src/model_train.py --mode compare --epochs 1 --batch_size 64
+
+# 推理并生成 Grad-CAM 可视化
+python chapter_05_resnet_modern_cnn/src/inference.py --img_path chapter_05_resnet_modern_cnn/images/airplane.png
+```
+完整代码级讲解见：`chapter_05_resnet_modern_cnn/CODE_LOGIC_README.md`
+
+### 0.2 术语速查表
+| 术语 | 一句话解释 |
+| :--- | :--- |
+| Degradation Problem | 网络变深后训练误差反而上升的现象。 |
+| Residual Connection | 把输入直接加到输出上的捷径连接。 |
+| BasicBlock | ResNet-18/34 使用的两层 3x3 残差块。 |
+| PlainNet | 关闭残差连接后的对照网络。 |
+| Downsample | 当尺寸/通道不匹配时对捷径分支做变换。 |
+| GAP | 全局平均池化，把空间维压到 1x1。 |
+| Logits | 分类头输出的原始分数。 |
+| Grad-CAM | 可视化模型关注区域的解释方法。 |
+
+### 0.3 这章代码入口在哪
+| 文件 | 作用 | 入口函数 |
+| :--- | :--- | :--- |
+| `src/model_train.py` | 训练与 A/B 对比实验 | `main()` |
+| `src/model.py` | ResNet/PlainNet 网络结构 | `ResNet.forward()` |
+| `src/dataset.py` | STL-10 数据加载与增强 | `get_stl10_loaders()` |
+| `src/inference.py` | 推理与 CAM 产物生成 | `main()` |
+| `src/cam.py` | Grad-CAM 计算与叠图 | `GradCAM.__call__()` |
+
+### 0.4 通俗桥接
+可以把残差连接理解为“保底通道”：即使新学到的变换还不稳定，模型也能先把原始信息传下去，不会因为网络太深就把有效特征“磨没”。
+
+### 0.5 常见误区与排错
+1. 误区：残差连接一定提升每个任务。排错：先做对照实验，看 `compare` 模式下的验证指标。
+2. 误区：训练和推理预处理可以不一致。排错：均值方差与输入尺寸必须和训练时一致。
+3. 误区：Grad-CAM 热力图就是“绝对因果解释”。排错：它是可解释信号，不是严格因果证明。
+
 欢迎来到第五章。在上一章中，我们通过 CNN 掌握了特征提取的基本范式。本章我们将解决深度学习历史上最关键的瓶颈之一：**深度（Depth）带来的优化难题**。
 
 我们将从视觉模型的宏观进化史切入，深入剖析 ResNet 如何通过简单的数学变换打破了网络的深度限制，并为后续的大模型（如 Transformer 中的 Residual Connection）奠定了基础。
