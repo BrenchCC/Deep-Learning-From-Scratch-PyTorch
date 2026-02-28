@@ -1,5 +1,52 @@
 # Chapter 06: Sequence Modeling - RNN & LSTM (Theoretical Review)
 
+## 0. 小白先读（3-5 分钟）
+这一章要解决的问题是：模型如何记住“前面出现过的信息”。
+先抓住三点：
+1. RNN 用隐状态在时间步之间传递上下文。
+2. LSTM/GRU 用门控缓解长序列中的梯度问题。
+3. 代码里使用 `pack_padded_sequence` 处理变长序列，训练会更高效。
+
+### 0.1 先跑再学（最小命令）
+```bash
+# LSTM 最小训练
+python chapter_06_rnn_lstm_seq/main.py --model_type lstm --epochs 1 --data_size 2000
+
+# RNN / GRU 对照
+python chapter_06_rnn_lstm_seq/main.py --model_type rnn --epochs 1 --data_size 2000
+python chapter_06_rnn_lstm_seq/main.py --model_type gru --epochs 1 --data_size 2000
+```
+完整代码级讲解见：`chapter_06_rnn_lstm_seq/CODE_LOGIC_README.md`
+
+### 0.2 术语速查表
+| 术语 | 一句话解释 |
+| :--- | :--- |
+| Hidden State | RNN 在时间上传递的短期记忆。 |
+| Cell State | LSTM 的长期记忆通道。 |
+| BPTT | RNN 的时间维反向传播。 |
+| Vanishing Gradient | 长链路反向时梯度越来越小。 |
+| Gradient Clipping | 限制梯度范数，防止爆炸。 |
+| Packed Sequence | 跳过 padding 位置的高效序列表示。 |
+| Bidirectional | 同时看前后文的双向建模方式。 |
+| Many-to-One | 读完整个序列后输出一个分类结果。 |
+
+### 0.3 这章代码入口在哪
+| 文件 | 作用 | 入口函数 |
+| :--- | :--- | :--- |
+| `main.py` | 训练、验证、样例推理 | `main()` |
+| `model.py` | 通用 RNN/LSTM/GRU 分类器 | `DynamicRNNClassifier.forward()` |
+| `dataset.py` | 合成数据集与变长 collator | `SyntheticNameDataset`, `VectorizedCollator` |
+| `examples/easy_demo.py` | 基础 LSTM 演示 | `main()` |
+| `examples/sentime_lstm_demo.py` | 情感分类示例骨架 | `SentimentLSTM.forward()` |
+
+### 0.4 通俗桥接
+如果把一句话看成“按时间展开的数据流”，RNN 就像一位边读边记的读者；LSTM/GRU 是给这位读者加了“遗忘/记忆开关”，让它在长句里不容易忘掉关键信息。
+
+### 0.5 常见误区与排错
+1. 误区：序列 padding 后直接喂 RNN 就足够。排错：建议配合 `pack_padded_sequence`，避免模型学到 padding 噪声。
+2. 误区：只看训练集精度。排错：每个 epoch 同时看验证集损失和精度。
+3. 误区：梯度裁剪可有可无。排错：循环网络更易梯度不稳定，建议默认开启裁剪。
+
 欢迎来到序列建模章节。在之前的 CNN 章节中，我们处理的是具有空间特征的网格数据（如图像）。但在自然语言处理（NLP）、语音识别和时间序列预测中，数据具有显著的**时间依赖性**。
 
 本节我们将深入探讨循环神经网络（RNN）及其进化变体长短期记忆网络（LSTM），重点关注它们如何解决“记忆”问题以及工程实现的细节。
