@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import logging
 import argparse
 from typing import Dict
@@ -10,21 +11,19 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+from torch.utils.data import Dataset
 from torch.utils.data import random_split
 from tqdm import tqdm
 
+# Add project root to Python path
 sys.path.append(os.getcwd())
 
 from chapter_07_attention_mechanism.dataset import PAD_TOKEN_ID
-from chapter_07_attention_mechanism.dataset import BOS_TOKEN_ID
-from chapter_07_attention_mechanism.dataset import EOS_TOKEN_ID
-from chapter_07_attention_mechanism.dataset import ToyCopyDataset
-from chapter_07_attention_mechanism.dataset import ToyCopyCollator
-from chapter_07_attention_mechanism.masks import build_causal_mask
-from chapter_07_attention_mechanism.masks import build_padding_mask
-from chapter_07_attention_mechanism.transformer import Seq2SeqTransformer
+from chapter_07_attention_mechanism.dataset import MASK_TOKEN_ID
+from chapter_07_attention_mechanism.dataset import MaskedCopyDataset
+from chapter_07_attention_mechanism.dataset import MaskedCopyCollator
+from chapter_07_attention_mechanism.model import SingleLayerSelfAttentionModel
 from utils import get_device
-from utils import save_json
 from utils import setup_seed
 
 logger = logging.getLogger(__name__)
@@ -32,215 +31,126 @@ logger = logging.getLogger(__name__)
 
 def parse_args() -> argparse.Namespace:
     """
-    Parse command-line arguments for chapter 07 training.
+    Parse command line arguments.
 
     Args:
         None
 
     Returns:
-        argparse.Namespace: Parsed runtime arguments.
+        argparse.Namespace: Parsed arguments.
     """
-    parser = argparse.ArgumentParser(description = "Chapter 07: Train Transformer on Toy Copy Task")
-    parser.add_argument(
-        "--seed",
-        type = int,
-        default = 42,
-        help = "Random seed"
-    )
-    parser.add_argument(
-        "--epochs",
-        type = int,
-        default = 10,
-        help = "Number of training epochs"
-    )
-    parser.add_argument(
-        "--batch_size",
-        type = int,
-        default = 64,
-        help = "Batch size"
-    )
-    parser.add_argument(
-        "--num_samples",
-        type = int,
-        default = 10000,
-        help = "Number of synthetic samples"
-    )
-    parser.add_argument(
-        "--val_split",
-        type = float,
-        default = 0.2,
-        help = "Validation split ratio"
-    )
-    parser.add_argument(
-        "--vocab_size",
-        type = int,
-        default = 64,
-        help = "Vocabulary size including special tokens"
-    )
-    parser.add_argument(
-        "--min_seq_len",
-        type = int,
-        default = 4,
-        help = "Minimum sequence length"
-    )
-    parser.add_argument(
-        "--max_seq_len",
-        type = int,
-        default = 20,
-        help = "Maximum sequence length"
-    )
-    parser.add_argument(
-        "--d_model",
-        type = int,
-        default = 128,
-        help = "Model hidden dimension"
-    )
-    parser.add_argument(
-        "--num_heads",
-        type = int,
-        default = 8,
-        help = "Number of attention heads"
-    )
-    parser.add_argument(
-        "--num_encoder_layers",
-        type = int,
-        default = 3,
-        help = "Number of encoder layers"
-    )
-    parser.add_argument(
-        "--num_decoder_layers",
-        type = int,
-        default = 3,
-        help = "Number of decoder layers"
-    )
-    parser.add_argument(
-        "--ffn_hidden_dim",
-        type = int,
-        default = 512,
-        help = "Feed-forward hidden dimension"
-    )
-    parser.add_argument(
-        "--dropout",
-        type = float,
-        default = 0.1,
-        help = "Dropout rate"
-    )
-    parser.add_argument(
-        "--lr",
-        type = float,
-        default = 1e-3,
-        help = "Learning rate"
-    )
-    parser.add_argument(
-        "--weight_decay",
-        type = float,
-        default = 1e-4,
-        help = "AdamW weight decay"
-    )
-    parser.add_argument(
-        "--max_grad_norm",
-        type = float,
-        default = 1.0,
-        help = "Gradient clipping max norm"
-    )
-    parser.add_argument(
-        "--num_workers",
-        type = int,
-        default = 0,
-        help = "DataLoader workers"
-    )
+    parser = argparse.ArgumentParser(description = "Chapter 07 masked copy training")
+    parser.add_argument("--seed", type = int, default = 42, help = "Random seed")
+    parser.add_argument("--epochs", type = int, default = 8, help = "Training epochs")
+    parser.add_argument("--batch_size", type = int, default = 64, help = "Batch size")
+    parser.add_argument("--num_samples", type = int, default = 10000, help = "Dataset sample size")
+    parser.add_argument("--val_split", type = float, default = 0.2, help = "Validation split")
+    parser.add_argument("--vocab_size", type = int, default = 64, help = "Vocabulary size")
+    parser.add_argument("--min_seq_len", type = int, default = 6, help = "Min sequence length")
+    parser.add_argument("--max_seq_len", type = int, default = 20, help = "Max sequence length")
+    parser.add_argument("--mask_ratio", type = float, default = 0.3, help = "Masked ratio")
+    parser.add_argument("--d_model", type = int, default = 128, help = "Model hidden size")
+    parser.add_argument("--dropout", type = float, default = 0.1, help = "Dropout")
+    parser.add_argument("--lr", type = float, default = 1e-3, help = "Learning rate")
+    parser.add_argument("--weight_decay", type = float, default = 1e-4, help = "Weight decay")
+    parser.add_argument("--max_grad_norm", type = float, default = 1.0, help = "Grad clip")
+    parser.add_argument("--num_workers", type = int, default = 0, help = "DataLoader workers")
     parser.add_argument(
         "--num_prediction_examples",
         type = int,
         default = 5,
-        help = "Number of greedy decode examples to save"
-    )
-    parser.add_argument(
-        "--shape_check_only",
-        action = "store_true",
-        help = "Run shape and mask checks only"
+        help = "Number of prediction examples"
     )
     parser.add_argument(
         "--result_dir",
         type = str,
         default = "chapter_07_attention_mechanism/results",
-        help = "Directory to save metrics and predictions"
+        help = "Directory for result files"
     )
     parser.add_argument(
         "--checkpoint_dir",
         type = str,
         default = "chapter_07_attention_mechanism/checkpoints",
-        help = "Directory to save model checkpoints"
+        help = "Directory for checkpoints"
     )
     return parser.parse_args()
 
 
-def args_parser() -> argparse.Namespace:
+def compute_masked_loss(
+    logits: torch.Tensor,
+    targets: torch.Tensor,
+    predict_mask: torch.Tensor
+) -> torch.Tensor:
     """
-    Backward-compatible alias for parse_args.
+    Compute cross-entropy only on masked positions.
 
     Args:
-        None
+        logits (torch.Tensor): Model logits [batch, seq_len, vocab_size].
+        targets (torch.Tensor): Target ids [batch, seq_len].
+        predict_mask (torch.Tensor): Masked positions [batch, seq_len].
 
     Returns:
-        argparse.Namespace: Parsed runtime arguments.
+        torch.Tensor: Scalar loss.
     """
-    return parse_args()
+    vocab_size = logits.size(-1)
+    per_token_loss = nn.functional.cross_entropy(
+        logits.reshape(-1, vocab_size),
+        targets.reshape(-1),
+        reduction = "none"
+    )
+
+    flat_mask = predict_mask.reshape(-1)
+    valid_count = flat_mask.sum().clamp_min(1)
+    masked_loss = (per_token_loss * flat_mask.float()).sum() / valid_count.float()
+    return masked_loss
 
 
-def compute_token_accuracy(logits: torch.Tensor, targets: torch.Tensor, pad_token_id: int) -> Tuple[int, int]:
+def compute_masked_accuracy(
+    logits: torch.Tensor,
+    targets: torch.Tensor,
+    predict_mask: torch.Tensor
+) -> Tuple[int, int]:
     """
-    Compute token-level accuracy while ignoring padded positions.
+    Compute accuracy on masked positions.
 
     Args:
-        logits (torch.Tensor): Model logits with shape [batch, seq_len, vocab_size].
-        targets (torch.Tensor): Target tokens with shape [batch, seq_len].
-        pad_token_id (int): Padding token id.
+        logits (torch.Tensor): Model logits [batch, seq_len, vocab_size].
+        targets (torch.Tensor): Target ids [batch, seq_len].
+        predict_mask (torch.Tensor): Masked positions [batch, seq_len].
 
     Returns:
-        Tuple[int, int]: Number of correct tokens and valid tokens.
+        Tuple[int, int]: Correct count and total count.
     """
     predictions = logits.argmax(dim = -1)
-    valid_mask = targets.ne(pad_token_id)
-    correct_mask = predictions.eq(targets) & valid_mask
-
-    correct_count = int(correct_mask.sum().item())
-    total_count = int(valid_mask.sum().item())
+    correct = predictions.eq(targets) & predict_mask
+    correct_count = int(correct.sum().item())
+    total_count = int(predict_mask.sum().item())
     return correct_count, total_count
 
 
-def run_copy_epoch(
-    model: Seq2SeqTransformer,
+def run_epoch(
+    model: SingleLayerSelfAttentionModel,
     dataloader: DataLoader,
-    criterion: nn.Module,
     optimizer: optim.Optimizer,
     device: torch.device,
-    pad_token_id: int,
     stage: str,
-    epoch_idx: int,
     max_grad_norm: float
 ) -> Dict[str, float]:
     """
-    Run one train or evaluation epoch for copy task.
+    Run one training or validation epoch.
 
     Args:
-        model (Seq2SeqTransformer): Transformer model.
-        dataloader (DataLoader): Input data loader.
-        criterion (nn.Module): Loss function.
-        optimizer (optim.Optimizer): Optimizer for training stage.
+        model (SingleLayerSelfAttentionModel): Model instance.
+        dataloader (DataLoader): Data loader.
+        optimizer (optim.Optimizer): Optimizer.
         device (torch.device): Runtime device.
-        pad_token_id (int): Padding token id.
-        stage (str): "train" or "eval".
-        epoch_idx (int): Current epoch index.
-        max_grad_norm (float): Gradient clipping max norm.
+        stage (str): Train or eval stage.
+        max_grad_norm (float): Gradient clipping value.
 
     Returns:
-        Dict[str, float]: Aggregated loss and token accuracy.
+        Dict[str, float]: Aggregated metrics.
     """
     normalized_stage = stage.lower().strip()
-    if normalized_stage not in ["train", "eval"]:
-        raise ValueError("stage must be 'train' or 'eval'.")
-
     is_train = normalized_stage == "train"
     if is_train:
         model.train()
@@ -249,184 +159,102 @@ def run_copy_epoch(
 
     running_loss = 0.0
     running_correct = 0
-    running_tokens = 0
+    running_total = 0
 
-    loop = tqdm(
-        dataloader,
-        desc = f"Epoch {epoch_idx} [{normalized_stage.upper()}]",
-        leave = False
-    )
-
+    loop = tqdm(dataloader, desc = f"{normalized_stage.upper()}", leave = False)
     with torch.set_grad_enabled(is_train):
-        for src_tokens, tgt_input_tokens, tgt_output_tokens in loop:
-            src_tokens = src_tokens.to(device)
-            tgt_input_tokens = tgt_input_tokens.to(device)
-            tgt_output_tokens = tgt_output_tokens.to(device)
+        for input_tokens, target_tokens, predict_mask in loop:
+            input_tokens = input_tokens.to(device)
+            target_tokens = target_tokens.to(device)
+            predict_mask = predict_mask.to(device)
 
-            logits = model(src_tokens, tgt_input_tokens)
-            vocab_size = logits.size(-1)
-            loss = criterion(logits.view(-1, vocab_size), tgt_output_tokens.view(-1))
+            logits, _ = model(input_tokens, padding_mask = None, return_scores = False)
+            loss = compute_masked_loss(logits, target_tokens, predict_mask)
 
             if is_train:
                 optimizer.zero_grad()
                 loss.backward()
-                if max_grad_norm > 0:
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm = max_grad_norm)
+                nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
                 optimizer.step()
 
-            correct_count, token_count = compute_token_accuracy(logits, tgt_output_tokens, pad_token_id)
+            correct_count, total_count = compute_masked_accuracy(logits, target_tokens, predict_mask)
+            running_loss += float(loss.item())
             running_correct += correct_count
-            running_tokens += token_count
-            running_loss += loss.item() * max(token_count, 1)
+            running_total += total_count
 
-            avg_loss = running_loss / max(running_tokens, 1)
-            avg_acc = 100.0 * running_correct / max(running_tokens, 1)
-            loop.set_postfix(loss = f"{avg_loss:.4f}", token_acc = f"{avg_acc:.2f}%")
+            avg_loss = running_loss / max(len(loop), 1)
+            avg_acc = 100.0 * running_correct / max(running_total, 1)
+            loop.set_postfix(loss = f"{avg_loss:.4f}", acc = f"{avg_acc:.2f}%")
 
-    epoch_loss = running_loss / max(running_tokens, 1)
-    epoch_acc = 100.0 * running_correct / max(running_tokens, 1)
-    return {
-        "loss": epoch_loss,
-        "token_acc": epoch_acc,
-        "num_tokens": float(running_tokens)
-    }
+    epoch_loss = running_loss / max(len(dataloader), 1)
+    epoch_acc = running_correct / max(running_total, 1)
+    return {"loss": epoch_loss, "masked_acc": epoch_acc}
 
 
-def trim_generated_tokens(token_ids: List[int], eos_token_id: int) -> List[int]:
-    """
-    Trim decoded tokens after EOS and remove prefix BOS if present.
-
-    Args:
-        token_ids (List[int]): Decoded token ids.
-        eos_token_id (int): End-of-sequence token id.
-
-    Returns:
-        List[int]: Trimmed token ids.
-    """
-    trimmed = []
-    start_index = 1 if len(token_ids) > 0 else 0
-
-    for token_id in token_ids[start_index:]:
-        trimmed.append(token_id)
-        if token_id == eos_token_id:
-            break
-    return trimmed
-
-
-def run_shape_and_mask_checks(model: Seq2SeqTransformer, device: torch.device) -> None:
-    """
-    Validate key module outputs and masks.
-
-    Args:
-        model (Seq2SeqTransformer): Transformer model.
-        device (torch.device): Runtime device.
-
-    Returns:
-        None
-    """
-    logger.info("Running shape and mask checks...")
-    model.eval()
-
-    src_tokens = torch.tensor(
-        [
-            [7, 8, 9, EOS_TOKEN_ID, PAD_TOKEN_ID],
-            [4, 5, EOS_TOKEN_ID, PAD_TOKEN_ID, PAD_TOKEN_ID]
-        ],
-        dtype = torch.long,
-        device = device
-    )
-    tgt_input_tokens = torch.tensor(
-        [
-            [BOS_TOKEN_ID, 7, 8, 9, PAD_TOKEN_ID],
-            [BOS_TOKEN_ID, 4, 5, PAD_TOKEN_ID, PAD_TOKEN_ID]
-        ],
-        dtype = torch.long,
-        device = device
-    )
-
-    with torch.no_grad():
-        logits, attention_dict = model(src_tokens, tgt_input_tokens, return_attn = True)
-
-    expected_shape = (src_tokens.size(0), tgt_input_tokens.size(1), model.vocab_size)
-    if logits.shape != expected_shape:
-        raise RuntimeError(f"Unexpected logits shape: {logits.shape}, expected: {expected_shape}")
-
-    src_mask = build_padding_mask(src_tokens, PAD_TOKEN_ID)
-    if src_mask.dtype != torch.bool or src_mask.shape != (2, 1, 1, 5):
-        raise RuntimeError("Padding mask check failed.")
-
-    causal_mask = build_causal_mask(seq_len = 5, device = device)
-    if not bool(causal_mask[0, 0, 0, 1].item()):
-        raise RuntimeError("Causal mask future position should be masked.")
-    if bool(causal_mask[0, 0, 2, 2].item()):
-        raise RuntimeError("Causal mask diagonal should not be masked.")
-
-    if len(attention_dict["encoder_self_attn"]) != len(model.encoder_layers):
-        raise RuntimeError("Encoder attention map count mismatch.")
-    if len(attention_dict["decoder_self_attn"]) != len(model.decoder_layers):
-        raise RuntimeError("Decoder self-attention map count mismatch.")
-    if len(attention_dict["decoder_cross_attn"]) != len(model.decoder_layers):
-        raise RuntimeError("Decoder cross-attention map count mismatch.")
-
-    logger.info("Shape and mask checks passed.")
-
-
-def save_prediction_examples(
-    model: Seq2SeqTransformer,
-    dataset: ToyCopyDataset,
+def collect_prediction_examples(
+    model: SingleLayerSelfAttentionModel,
+    dataset: Dataset,
     device: torch.device,
-    output_path: str,
-    num_examples: int,
-    max_target_len: int
-) -> None:
+    num_examples: int
+) -> List[Dict[str, List[int]]]:
     """
-    Save greedy decoding examples to JSON.
+    Collect prediction samples.
 
     Args:
-        model (Seq2SeqTransformer): Trained Transformer model.
-        dataset (ToyCopyDataset): Source dataset.
+        model (SingleLayerSelfAttentionModel): Trained model.
+        dataset (Dataset): Validation dataset or subset.
         device (torch.device): Runtime device.
-        output_path (str): Output json path.
-        num_examples (int): Number of examples to export.
-        max_target_len (int): Maximum target decode length.
+        num_examples (int): Number of examples.
+
+    Returns:
+        List[Dict[str, List[int]]]: Prediction sample list.
+    """
+    model.eval()
+    collator = MaskedCopyCollator(pad_token_id = PAD_TOKEN_ID)
+    sampled = [dataset[idx] for idx in range(min(num_examples, len(dataset)))]
+    input_tokens, target_tokens, predict_mask = collator(sampled)
+
+    input_tokens = input_tokens.to(device)
+    target_tokens = target_tokens.to(device)
+    predict_mask = predict_mask.to(device)
+
+    with torch.no_grad():
+        logits, _ = model(input_tokens, padding_mask = None, return_scores = False)
+
+    predictions = logits.argmax(dim = -1)
+    examples = []
+    for idx in range(input_tokens.size(0)):
+        mask_positions = torch.where(predict_mask[idx])[0].detach().cpu().tolist()
+        examples.append(
+            {
+                "input_tokens": input_tokens[idx].detach().cpu().tolist(),
+                "target_tokens": target_tokens[idx].detach().cpu().tolist(),
+                "predicted_tokens": predictions[idx].detach().cpu().tolist(),
+                "masked_positions": mask_positions
+            }
+        )
+    return examples
+
+
+def save_json(path: str, payload: Dict) -> None:
+    """
+    Save dictionary to json file.
+
+    Args:
+        path (str): Output file path.
+        payload (Dict): Json payload dictionary.
 
     Returns:
         None
     """
-    model.eval()
-    examples = []
-    limit = min(num_examples, len(dataset))
-
-    with torch.no_grad():
-        for index in range(limit):
-            raw_tokens = dataset[index]
-            src_tokens = raw_tokens + [EOS_TOKEN_ID]
-            src_tensor = torch.tensor([src_tokens], dtype = torch.long, device = device)
-
-            generated = model.greedy_decode(
-                src_tokens = src_tensor,
-                max_len = max_target_len,
-                bos_token_id = BOS_TOKEN_ID,
-                eos_token_id = EOS_TOKEN_ID
-            )
-            prediction_tokens = trim_generated_tokens(generated[0].tolist(), EOS_TOKEN_ID)
-
-            examples.append(
-                {
-                    "index": index,
-                    "source": src_tokens,
-                    "target": raw_tokens + [EOS_TOKEN_ID],
-                    "prediction": prediction_tokens
-                }
-            )
-
-    save_json(examples, output_path)
-    logger.info(f"Saved prediction examples to {output_path}")
+    os.makedirs(os.path.dirname(path), exist_ok = True)
+    with open(path, "w", encoding = "utf-8") as file:
+        json.dump(payload, file, ensure_ascii = False, indent = 2)
 
 
 def main() -> None:
     """
-    Main training entry for chapter 07.
+    Training entry.
 
     Args:
         None
@@ -441,23 +269,24 @@ def main() -> None:
     os.makedirs(args.result_dir, exist_ok = True)
     os.makedirs(args.checkpoint_dir, exist_ok = True)
 
+    logger.info("=" * 80)
+    logger.info("Chapter 07 - Masked Copy with Single Self-Attention")
+    logger.info("=" * 80)
     logger.info(f"Device: {device}")
-    logger.info(f"Arguments: {vars(args)}")
 
-    dataset = ToyCopyDataset(
+    full_dataset = MaskedCopyDataset(
         num_samples = args.num_samples,
         vocab_size = args.vocab_size,
         min_seq_len = args.min_seq_len,
         max_seq_len = args.max_seq_len,
+        mask_ratio = args.mask_ratio,
         seed = args.seed
     )
+    train_size = int(len(full_dataset) * (1.0 - args.val_split))
+    val_size = len(full_dataset) - train_size
+    train_dataset, val_dataset = random_split(full_dataset, [train_size, val_size])
 
-    train_size = int((1.0 - args.val_split) * len(dataset))
-    val_size = len(dataset) - train_size
-    split_generator = torch.Generator().manual_seed(args.seed)
-    train_dataset, val_dataset = random_split(dataset, [train_size, val_size], generator = split_generator)
-
-    collator = ToyCopyCollator()
+    collator = MaskedCopyCollator(pad_token_id = PAD_TOKEN_ID)
     train_loader = DataLoader(
         train_dataset,
         batch_size = args.batch_size,
@@ -473,97 +302,86 @@ def main() -> None:
         collate_fn = collator
     )
 
-    model = Seq2SeqTransformer(
+    model = SingleLayerSelfAttentionModel(
         vocab_size = args.vocab_size,
         d_model = args.d_model,
-        num_heads = args.num_heads,
-        num_encoder_layers = args.num_encoder_layers,
-        num_decoder_layers = args.num_decoder_layers,
-        ffn_hidden_dim = args.ffn_hidden_dim,
-        dropout = args.dropout,
-        max_len = args.max_seq_len + 8,
-        pad_token_id = PAD_TOKEN_ID
+        pad_token_id = PAD_TOKEN_ID,
+        dropout = args.dropout
     ).to(device)
-
-    run_shape_and_mask_checks(model, device)
-    if args.shape_check_only:
-        logger.info("Shape check only mode completed.")
-        return
-
-    criterion = nn.CrossEntropyLoss(ignore_index = PAD_TOKEN_ID)
     optimizer = optim.AdamW(model.parameters(), lr = args.lr, weight_decay = args.weight_decay)
 
-    metrics = {
-        "train_loss": [],
-        "val_loss": [],
-        "train_token_acc": [],
-        "val_token_acc": []
-    }
-
+    history = []
     best_val_loss = float("inf")
-    best_checkpoint_path = os.path.join(args.checkpoint_dir, "transformer_copy_best.pth")
+    best_checkpoint_path = os.path.join(args.checkpoint_dir, "ch07_single_attn_best.pth")
 
     for epoch_idx in range(1, args.epochs + 1):
-        train_metrics = run_copy_epoch(
+        logger.info("-" * 80)
+        logger.info(f"Epoch {epoch_idx}/{args.epochs}")
+        logger.info("-" * 80)
+
+        train_metrics = run_epoch(
             model = model,
             dataloader = train_loader,
-            criterion = criterion,
             optimizer = optimizer,
             device = device,
-            pad_token_id = PAD_TOKEN_ID,
             stage = "train",
-            epoch_idx = epoch_idx,
             max_grad_norm = args.max_grad_norm
         )
-        val_metrics = run_copy_epoch(
+        val_metrics = run_epoch(
             model = model,
             dataloader = val_loader,
-            criterion = criterion,
             optimizer = optimizer,
             device = device,
-            pad_token_id = PAD_TOKEN_ID,
             stage = "eval",
-            epoch_idx = epoch_idx,
             max_grad_norm = args.max_grad_norm
         )
 
-        metrics["train_loss"].append(train_metrics["loss"])
-        metrics["val_loss"].append(val_metrics["loss"])
-        metrics["train_token_acc"].append(train_metrics["token_acc"])
-        metrics["val_token_acc"].append(val_metrics["token_acc"])
-
-        logger.info(
-            f"Epoch {epoch_idx}/{args.epochs} | "
-            f"Train Loss: {train_metrics['loss']:.4f} Token Acc: {train_metrics['token_acc']:.2f}% | "
-            f"Val Loss: {val_metrics['loss']:.4f} Token Acc: {val_metrics['token_acc']:.2f}%"
-        )
+        epoch_payload = {
+            "epoch": epoch_idx,
+            "train_loss": train_metrics["loss"],
+            "train_masked_acc": train_metrics["masked_acc"],
+            "val_loss": val_metrics["loss"],
+            "val_masked_acc": val_metrics["masked_acc"]
+        }
+        history.append(epoch_payload)
+        logger.info(f"Train loss: {train_metrics['loss']:.4f} | Train masked acc: {100.0 * train_metrics['masked_acc']:.2f}%")
+        logger.info(f"Val   loss: {val_metrics['loss']:.4f} | Val   masked acc: {100.0 * val_metrics['masked_acc']:.2f}%")
 
         if val_metrics["loss"] < best_val_loss:
             best_val_loss = val_metrics["loss"]
             torch.save(model.state_dict(), best_checkpoint_path)
-            logger.info(f"Saved new best checkpoint: {best_checkpoint_path}")
+            logger.info(f"Saved best checkpoint to: {best_checkpoint_path}")
 
-    metrics_path = os.path.join(args.result_dir, "metrics.json")
-    save_json(metrics, metrics_path)
-
-    run_config = vars(args).copy()
-    run_config["best_val_loss"] = float(best_val_loss)
-    run_config["best_checkpoint"] = best_checkpoint_path
-    run_config_path = os.path.join(args.result_dir, "run_config.json")
-    save_json(run_config, run_config_path)
-
-    prediction_path = os.path.join(args.result_dir, "predictions.json")
-    save_prediction_examples(
+    prediction_examples = collect_prediction_examples(
         model = model,
-        dataset = dataset,
+        dataset = val_dataset,
         device = device,
-        output_path = prediction_path,
-        num_examples = args.num_prediction_examples,
-        max_target_len = args.max_seq_len + 4
+        num_examples = args.num_prediction_examples
     )
 
-    logger.info(f"Saved metrics to {metrics_path}")
-    logger.info(f"Saved run config to {run_config_path}")
+    metrics_path = os.path.join(args.result_dir, "metrics.json")
+    predictions_path = os.path.join(args.result_dir, "predictions.json")
+    run_config_path = os.path.join(args.result_dir, "run_config.json")
+
+    save_json(metrics_path, {"history": history, "best_val_loss": best_val_loss})
+    save_json(predictions_path, {"examples": prediction_examples})
+    save_json(
+        run_config_path,
+        {
+            "args": vars(args),
+            "pad_token_id": PAD_TOKEN_ID,
+            "mask_token_id": MASK_TOKEN_ID,
+            "best_checkpoint": best_checkpoint_path,
+            "best_val_loss": best_val_loss
+        }
+    )
+
+    logger.info("=" * 80)
+    logger.info("Chapter 07 training completed")
+    logger.info(f"Saved metrics: {metrics_path}")
+    logger.info(f"Saved predictions: {predictions_path}")
+    logger.info(f"Saved config: {run_config_path}")
+    logger.info("=" * 80)
 
 
 if __name__ == "__main__":

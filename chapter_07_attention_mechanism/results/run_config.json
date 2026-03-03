@@ -1,26 +1,26 @@
 {
+  "args": {
     "seed": 42,
     "epochs": 1,
     "batch_size": 64,
-    "num_samples": 512,
+    "num_samples": 2000,
     "val_split": 0.2,
     "vocab_size": 64,
-    "min_seq_len": 4,
+    "min_seq_len": 6,
     "max_seq_len": 20,
+    "mask_ratio": 0.3,
     "d_model": 128,
-    "num_heads": 8,
-    "num_encoder_layers": 3,
-    "num_decoder_layers": 3,
-    "ffn_hidden_dim": 512,
     "dropout": 0.1,
     "lr": 0.001,
     "weight_decay": 0.0001,
     "max_grad_norm": 1.0,
     "num_workers": 0,
     "num_prediction_examples": 5,
-    "shape_check_only": false,
     "result_dir": "chapter_07_attention_mechanism/results",
-    "checkpoint_dir": "chapter_07_attention_mechanism/checkpoints",
-    "best_val_loss": 4.054004074039316,
-    "best_checkpoint": "chapter_07_attention_mechanism/checkpoints/transformer_copy_best.pth"
+    "checkpoint_dir": "chapter_07_attention_mechanism/checkpoints"
+  },
+  "pad_token_id": 0,
+  "mask_token_id": 1,
+  "best_checkpoint": "chapter_07_attention_mechanism/checkpoints/ch07_single_attn_best.pth",
+  "best_val_loss": 4.16172981262207
 }

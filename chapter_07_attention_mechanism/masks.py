@@ -3,7 +3,7 @@ import torch
 
 def build_padding_mask(tokens: torch.Tensor, pad_token_id: int) -> torch.Tensor:
     """
-    Build key-padding mask where padded positions are masked.
+    Build key padding mask.
 
     Args:
         tokens (torch.Tensor): Token ids with shape [batch, seq_len].
@@ -17,7 +17,7 @@ def build_padding_mask(tokens: torch.Tensor, pad_token_id: int) -> torch.Tensor:
 
 def build_causal_mask(seq_len: int, device: torch.device) -> torch.Tensor:
     """
-    Build upper-triangular future mask for autoregressive decoding.
+    Build causal mask for autoregressive attention.
 
     Args:
         seq_len (int): Sequence length.
@@ -26,8 +26,8 @@ def build_causal_mask(seq_len: int, device: torch.device) -> torch.Tensor:
     Returns:
         torch.Tensor: Boolean mask with shape [1, 1, seq_len, seq_len].
     """
-    future_mask = torch.triu(
+    upper_triangle = torch.triu(
         torch.ones(seq_len, seq_len, dtype = torch.bool, device = device),
         diagonal = 1
     )
-    return future_mask.unsqueeze(0).unsqueeze(1)
+    return upper_triangle.unsqueeze(0).unsqueeze(1)
