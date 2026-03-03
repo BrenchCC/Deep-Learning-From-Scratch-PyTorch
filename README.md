@@ -30,7 +30,7 @@ python chapter_01_tensor_autograd/autograd.py
 - 先完成 `01 -> 02` 打基础（自动微分 + MLP）。
 - 然后按兴趣分支：
   - 视觉方向：`03 -> 04 -> 05`
-  - 序列方向：`03 -> 06 -> 07`
+  - 序列方向：`03 -> 06 -> 07 -> 08`
 
 | 阶段 | 章节 | 你会学到什么 | 入口命令 | 预计耗时 |
 |---|---|---|---|---|
@@ -40,7 +40,8 @@ python chapter_01_tensor_autograd/autograd.py
 | 视觉分支 1 | [Chapter 04: Classic CNN](chapter_04_cnn_classic/README.md) | 卷积网络训练与推理 | `python chapter_04_cnn_classic/train.py --epochs 1 --batch_size 64` | 60-120 分钟 |
 | 视觉分支 2 | [Chapter 05: ResNet](chapter_05_resnet_modern_cnn/README.md) | 残差连接与现代 CNN 训练 | `python chapter_05_resnet_modern_cnn/src/model_train.py --mode compare --epochs 1 --batch_size 64` | 60-120 分钟 |
 | 序列分支 1 | [Chapter 06: RNN/LSTM/GRU](chapter_06_rnn_lstm_seq/README.md) | 序列建模与门控机制 | `python chapter_06_rnn_lstm_seq/main.py --model_type lstm --epochs 1 --data_size 2000` | 60-120 分钟 |
-| 序列分支 2 | [Chapter 07: Attention](chapter_07_attention_mechanism/README.md) | 注意力机制与 Toy Seq2Seq Copy | `python chapter_07_attention_mechanism/train.py --epochs 1 --num_samples 2000` | 60-120 分钟 |
+| 序列分支 2 | [Chapter 07: Attention Mechanism](chapter_07_attention_mechanism/README.md) | 注意力机制核心与掩码复制任务 | `python chapter_07_attention_mechanism/train.py --epochs 1 --num_samples 2000` | 45-90 分钟 |
+| 序列分支 3 | [Chapter 08: Vanilla Transformer](chapter_08_transformer_vanilla/README.md) | 手搓标准 Transformer（排序+翻译） | `python chapter_08_transformer_vanilla/train.py --task sort --epochs 1 --num_samples 2000` | 60-120 分钟 |
 
 ## 快速运行导航（按目标）
 
@@ -83,11 +84,22 @@ python chapter_06_rnn_lstm_seq/main.py --model_type lstm --epochs 1 --data_size 
 ### 我只想跑注意力机制最小实验
 
 ```bash
+python chapter_07_attention_mechanism/demo.py
 python chapter_07_attention_mechanism/train.py --epochs 1 --num_samples 2000
 ```
 
 你会看到什么：
-- `chapter_07_attention_mechanism/results/` 下的 `metrics.json`、`predictions.json` 等产物，以及 `checkpoints/` 模型文件。
+- `chapter_07_attention_mechanism/results/` 下的 `attention_demo.json`、`metrics.json`、`predictions.json` 等产物，以及 `checkpoints/` 模型文件。
+
+### 我想直接跑简化版 Transformer
+
+```bash
+python chapter_08_transformer_vanilla/train.py --task sort --epochs 1 --num_samples 2000
+python chapter_08_transformer_vanilla/train.py --task translate --epochs 1
+```
+
+你会看到什么：
+- `chapter_08_transformer_vanilla/results/` 下的 `sort_metrics.json` 或 `translate_metrics.json`，以及对应预测文件和 checkpoint。
 
 ## 章节总览
 
@@ -99,7 +111,8 @@ python chapter_07_attention_mechanism/train.py --epochs 1 --num_samples 2000
 | [04](chapter_04_cnn_classic/README.md) | 经典 CNN | `chapter_04_cnn_classic/train.py` | `chapter_04_cnn_classic/data/` | `results/`、可视化图 | [CODE_LOGIC_README](chapter_04_cnn_classic/CODE_LOGIC_README.md) |
 | [05](chapter_05_resnet_modern_cnn/README.md) | ResNet 与现代 CNN | `src/model_train.py` | `data/` + `images/` | `results/`、`checkpoints/` | [CODE_LOGIC_README](chapter_05_resnet_modern_cnn/CODE_LOGIC_README.md) |
 | [06](chapter_06_rnn_lstm_seq/README.md) | RNN/LSTM/GRU | `chapter_06_rnn_lstm_seq/main.py` | `chapter_06_rnn_lstm_seq/data/` | `results/`、`checkpoints/` | [CODE_LOGIC_README](chapter_06_rnn_lstm_seq/CODE_LOGIC_README.md) |
-| [07](chapter_07_attention_mechanism/README.md) | Attention / Seq2Seq | `chapter_07_attention_mechanism/train.py` | Toy copy task 数据 | `results/`、`checkpoints/` | [CODE_LOGIC_README](chapter_07_attention_mechanism/CODE_LOGIC_README.md) |
+| [07](chapter_07_attention_mechanism/README.md) | Attention Mechanism Core | `chapter_07_attention_mechanism/demo.py` / `train.py` | 随机向量 + masked copy 数据 | `results/`、`checkpoints/` | [CODE_LOGIC_README](chapter_07_attention_mechanism/CODE_LOGIC_README.md) |
+| [08](chapter_08_transformer_vanilla/README.md) | Vanilla Transformer | `chapter_08_transformer_vanilla/train.py` | sort 合成数据 + toy 翻译对 | `results/`、`checkpoints/` | [CODE_LOGIC_README](chapter_08_transformer_vanilla/CODE_LOGIC_README.md) |
 | [Sutskever 实验区](sutskever-implementations/README.md) | 论文机制复现 | 各子目录入口脚本 | 各实验自带数据 | `images/`、`results/`、`checkpoints/` | [总览 README](sutskever-implementations/README.md) |
 
 ## 术语跳转索引
@@ -110,7 +123,8 @@ python chapter_07_attention_mechanism/train.py --epochs 1 --num_samples 2000
 - 卷积神经网络（CNN）：见 [Chapter 04](chapter_04_cnn_classic/README.md)
 - 残差网络（ResNet）：见 [Chapter 05](chapter_05_resnet_modern_cnn/README.md)
 - RNN / LSTM / GRU：见 [Chapter 06](chapter_06_rnn_lstm_seq/README.md)
-- Attention / Seq2Seq：见 [Chapter 07](chapter_07_attention_mechanism/README.md)
+- Attention Mechanism Core：见 [Chapter 07](chapter_07_attention_mechanism/README.md)
+- Vanilla Transformer：见 [Chapter 08](chapter_08_transformer_vanilla/README.md)
 
 ## 仓库地图（精简）
 
@@ -125,7 +139,8 @@ Deep-Learning-From-Scratch-PyTorch/
 ├── chapter_04_cnn_classic/                 # 经典 CNN
 ├── chapter_05_resnet_modern_cnn/           # ResNet 与现代 CNN
 ├── chapter_06_rnn_lstm_seq/                # 序列模型
-├── chapter_07_attention_mechanism/         # 注意力机制
+├── chapter_07_attention_mechanism/         # 注意力机制核心
+├── chapter_08_transformer_vanilla/         # 手搓标准 Transformer
 └── sutskever-implementations/              # 论文机制复现实验区
 ```
 
@@ -201,7 +216,8 @@ This project is a from-scratch PyTorch learning repository for core deep learnin
 - Optimization and regularization
 - CNN and ResNet
 - RNN/LSTM/GRU
-- Attention mechanism
+- Attention mechanism core
+- Vanilla transformer (sorting + toy translation)
 
 Quick start:
 
@@ -212,7 +228,7 @@ python chapter_01_tensor_autograd/autograd.py
 
 Recommended path:
 1. Chapter 01 -> Chapter 02
-2. Then choose either vision track (03 -> 04 -> 05) or sequence track (03 -> 06 -> 07)
+2. Then choose either vision track (03 -> 04 -> 05) or sequence track (03 -> 06 -> 07 -> 08)
 
 For paper-inspired standalone experiments, see:
 - [sutskever-implementations/README.md](sutskever-implementations/README.md)

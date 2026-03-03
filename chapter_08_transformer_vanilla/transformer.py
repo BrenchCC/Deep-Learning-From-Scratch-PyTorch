@@ -9,14 +9,44 @@ import torch.nn as nn
 
 from .decoder import TransformerDecoderLayer
 from .encoder import TransformerEncoderLayer
-from .masks import build_causal_mask
-from .masks import build_padding_mask
 from .positional_encoding import SinusoidalPositionalEncoding
 
 
-class Seq2SeqTransformer(nn.Module):
+def build_padding_mask(tokens: torch.Tensor, pad_token_id: int) -> torch.Tensor:
     """
-    Full encoder-decoder Transformer for toy seq2seq tasks.
+    Build padding mask.
+
+    Args:
+        tokens (torch.Tensor): Token ids [batch, seq_len].
+        pad_token_id (int): Padding token id.
+
+    Returns:
+        torch.Tensor: Boolean mask [batch, 1, 1, seq_len].
+    """
+    return tokens.eq(pad_token_id).unsqueeze(1).unsqueeze(2)
+
+
+def build_causal_mask(seq_len: int, device: torch.device) -> torch.Tensor:
+    """
+    Build causal mask.
+
+    Args:
+        seq_len (int): Sequence length.
+        device (torch.device): Runtime device.
+
+    Returns:
+        torch.Tensor: Boolean mask [1, 1, seq_len, seq_len].
+    """
+    upper_triangle = torch.triu(
+        torch.ones(seq_len, seq_len, dtype = torch.bool, device = device),
+        diagonal = 1
+    )
+    return upper_triangle.unsqueeze(0).unsqueeze(1)
+
+
+class VanillaTransformer(nn.Module):
+    """
+    Simplified vanilla Transformer encoder-decoder.
     """
 
     def __init__(
@@ -24,23 +54,23 @@ class Seq2SeqTransformer(nn.Module):
         vocab_size: int,
         d_model: int = 128,
         num_heads: int = 8,
-        num_encoder_layers: int = 3,
-        num_decoder_layers: int = 3,
-        ffn_hidden_dim: int = 512,
+        num_encoder_layers: int = 2,
+        num_decoder_layers: int = 2,
+        ffn_hidden_dim: int = 256,
         dropout: float = 0.1,
         max_len: int = 256,
         pad_token_id: int = 0
     ):
         """
-        Initialize full Transformer model.
+        Initialize model.
 
         Args:
             vocab_size (int): Vocabulary size.
-            d_model (int): Hidden dimension size.
-            num_heads (int): Number of attention heads.
-            num_encoder_layers (int): Number of encoder layers.
-            num_decoder_layers (int): Number of decoder layers.
-            ffn_hidden_dim (int): Feed-forward hidden dimension.
+            d_model (int): Hidden size.
+            num_heads (int): Number of heads.
+            num_encoder_layers (int): Encoder depth.
+            num_decoder_layers (int): Decoder depth.
+            ffn_hidden_dim (int): FFN hidden size.
             dropout (float): Dropout rate.
             max_len (int): Maximum sequence length.
             pad_token_id (int): Padding token id.
@@ -96,21 +126,21 @@ class Seq2SeqTransformer(nn.Module):
         Encode source tokens.
 
         Args:
-            src_tokens (torch.Tensor): Source token ids [batch, src_len].
-            src_mask (Optional[torch.Tensor]): Source key-padding mask.
-            need_weights (bool): Whether to collect attention maps.
+            src_tokens (torch.Tensor): Source ids [batch, src_len].
+            src_mask (Optional[torch.Tensor]): Source key padding mask.
+            need_weights (bool): Whether to return attention maps.
 
         Returns:
-            Tuple[torch.Tensor, List[torch.Tensor]]: Memory tensor and attention maps.
+            Tuple[torch.Tensor, List[torch.Tensor]]: Memory and attention maps.
         """
         x = self.src_embedding(src_tokens) * math.sqrt(self.d_model)
         x = self.positional_encoding(x)
 
         attention_maps = []
         for layer in self.encoder_layers:
-            x, attention_weights = layer(x, src_mask = src_mask, need_weights = need_weights)
-            if need_weights and attention_weights is not None:
-                attention_maps.append(attention_weights)
+            x, layer_scores = layer(x, src_mask = src_mask, need_weights = need_weights)
+            if need_weights and layer_scores is not None:
+                attention_maps.append(layer_scores)
 
         return x, attention_maps
 
@@ -123,14 +153,14 @@ class Seq2SeqTransformer(nn.Module):
         need_weights: bool = False
     ) -> Tuple[torch.Tensor, List[torch.Tensor], List[torch.Tensor]]:
         """
-        Decode target tokens using encoder memory.
+        Decode target tokens.
 
         Args:
             tgt_input_tokens (torch.Tensor): Decoder input ids [batch, tgt_len].
-            memory (torch.Tensor): Encoder output [batch, src_len, d_model].
-            tgt_mask (Optional[torch.Tensor]): Decoder self-attention mask.
-            memory_mask (Optional[torch.Tensor]): Encoder-decoder attention mask.
-            need_weights (bool): Whether to collect attention maps.
+            memory (torch.Tensor): Encoder memory [batch, src_len, d_model].
+            tgt_mask (Optional[torch.Tensor]): Decoder mask.
+            memory_mask (Optional[torch.Tensor]): Cross attention mask.
+            need_weights (bool): Whether to return attention maps.
 
         Returns:
             Tuple[torch.Tensor, List[torch.Tensor], List[torch.Tensor]]:
@@ -139,23 +169,23 @@ class Seq2SeqTransformer(nn.Module):
         x = self.tgt_embedding(tgt_input_tokens) * math.sqrt(self.d_model)
         x = self.positional_encoding(x)
 
-        self_attention_maps = []
-        cross_attention_maps = []
+        self_maps = []
+        cross_maps = []
 
         for layer in self.decoder_layers:
-            x, self_weights, cross_weights = layer(
+            x, self_scores, cross_scores = layer(
                 x,
                 memory,
                 tgt_mask = tgt_mask,
                 memory_mask = memory_mask,
                 need_weights = need_weights
             )
-            if need_weights and self_weights is not None:
-                self_attention_maps.append(self_weights)
-            if need_weights and cross_weights is not None:
-                cross_attention_maps.append(cross_weights)
+            if need_weights and self_scores is not None:
+                self_maps.append(self_scores)
+            if need_weights and cross_scores is not None:
+                cross_maps.append(cross_scores)
 
-        return x, self_attention_maps, cross_attention_maps
+        return x, self_maps, cross_maps
 
     def forward(
         self,
@@ -164,27 +194,26 @@ class Seq2SeqTransformer(nn.Module):
         return_attn: bool = False
     ):
         """
-        Run end-to-end Transformer forward pass.
+        End-to-end forward.
 
         Args:
-            src_tokens (torch.Tensor): Source token ids [batch, src_len].
-            tgt_input_tokens (torch.Tensor): Decoder input token ids [batch, tgt_len].
+            src_tokens (torch.Tensor): Source ids.
+            tgt_input_tokens (torch.Tensor): Decoder input ids.
             return_attn (bool): Whether to return attention maps.
 
         Returns:
-            torch.Tensor or tuple: Logits or (logits, attention_dict).
+            torch.Tensor or tuple: logits or (logits, attention_dict).
         """
         src_mask = build_padding_mask(src_tokens, self.pad_token_id)
         tgt_padding_mask = build_padding_mask(tgt_input_tokens, self.pad_token_id)
         tgt_causal_mask = build_causal_mask(tgt_input_tokens.size(1), tgt_input_tokens.device)
         tgt_mask = tgt_padding_mask | tgt_causal_mask
 
-        memory, encoder_attention_maps = self.encode(
+        memory, encoder_maps = self.encode(
             src_tokens,
             src_mask = src_mask,
             need_weights = return_attn
         )
-
         decoder_states, decoder_self_maps, decoder_cross_maps = self.decode(
             tgt_input_tokens,
             memory,
@@ -196,7 +225,7 @@ class Seq2SeqTransformer(nn.Module):
 
         if return_attn:
             attention_dict: Dict[str, List[torch.Tensor]] = {
-                "encoder_self_attn": encoder_attention_maps,
+                "encoder_self_attn": encoder_maps,
                 "decoder_self_attn": decoder_self_maps,
                 "decoder_cross_attn": decoder_cross_maps
             }
@@ -211,16 +240,16 @@ class Seq2SeqTransformer(nn.Module):
         eos_token_id: int
     ) -> torch.Tensor:
         """
-        Generate output tokens with greedy decoding.
+        Greedy decoding.
 
         Args:
-            src_tokens (torch.Tensor): Source token ids [batch, src_len].
-            max_len (int): Maximum generated length excluding BOS.
-            bos_token_id (int): Begin-of-sequence token id.
-            eos_token_id (int): End-of-sequence token id.
+            src_tokens (torch.Tensor): Source ids [batch, src_len].
+            max_len (int): Maximum decode length excluding BOS.
+            bos_token_id (int): BOS token id.
+            eos_token_id (int): EOS token id.
 
         Returns:
-            torch.Tensor: Generated token ids with leading BOS.
+            torch.Tensor: Generated ids with leading BOS.
         """
         src_mask = build_padding_mask(src_tokens, self.pad_token_id)
         memory, _ = self.encode(src_tokens, src_mask = src_mask, need_weights = False)
@@ -246,8 +275,8 @@ class Seq2SeqTransformer(nn.Module):
                 memory_mask = src_mask,
                 need_weights = False
             )
-            next_token_logits = self.output_projection(decoder_states[:, -1:, :])
-            next_token = next_token_logits.argmax(dim = -1)
+            next_logits = self.output_projection(decoder_states[:, -1:, :])
+            next_token = next_logits.argmax(dim = -1)
 
             generated = torch.cat([generated, next_token], dim = 1)
             finished = finished | next_token.squeeze(1).eq(eos_token_id)

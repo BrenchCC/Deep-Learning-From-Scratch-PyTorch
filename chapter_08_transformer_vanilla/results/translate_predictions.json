@@ -1,0 +1,89 @@
+{
+  "examples": [
+    {
+      "src": [
+        "my",
+        "name",
+        "is",
+        "alex"
+      ],
+      "target": [
+        "wo",
+        "jiao",
+        "alex"
+      ],
+      "prediction": [
+        "wo",
+        "jiao",
+        "alex"
+      ]
+    },
+    {
+      "src": [
+        "how",
+        "are",
+        "you"
+      ],
+      "target": [
+        "ni",
+        "hao",
+        "ma"
+      ],
+      "prediction": [
+        "ni"
+      ]
+    },
+    {
+      "src": [
+        "i",
+        "like",
+        "music"
+      ],
+      "target": [
+        "wo",
+        "xi",
+        "huan",
+        "yin",
+        "yue"
+      ],
+      "prediction": [
+        "wo",
+        "xi",
+        "huan"
+      ]
+    },
+    {
+      "src": [
+        "good",
+        "morning"
+      ],
+      "target": [
+        "zao",
+        "shang",
+        "hao"
+      ],
+      "prediction": [
+        "wo"
+      ]
+    },
+    {
+      "src": [
+        "i",
+        "like",
+        "music"
+      ],
+      "target": [
+        "wo",
+        "xi",
+        "huan",
+        "yin",
+        "yue"
+      ],
+      "prediction": [
+        "wo",
+        "xi",
+        "huan"
+      ]
+    }
+  ]
+}
