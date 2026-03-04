@@ -30,7 +30,7 @@ python chapter_01_tensor_autograd/autograd.py
 - 先完成 `01 -> 02` 打基础（自动微分 + MLP）。
 - 然后按兴趣分支：
   - 视觉方向：`03 -> 04 -> 05`
-  - 序列方向：`03 -> 06 -> 07 -> 08`
+  - 序列方向：`03 -> 06 -> 07 -> 08 -> 09`
 
 | 阶段 | 章节 | 你会学到什么 | 入口命令 | 预计耗时 |
 |---|---|---|---|---|
@@ -42,6 +42,7 @@ python chapter_01_tensor_autograd/autograd.py
 | 序列分支 1 | [Chapter 06: RNN/LSTM/GRU](chapter_06_rnn_lstm_seq/README.md) | 序列建模与门控机制 | `python chapter_06_rnn_lstm_seq/main.py --model_type lstm --epochs 1 --data_size 2000` | 60-120 分钟 |
 | 序列分支 2 | [Chapter 07: Attention Mechanism](chapter_07_attention_mechanism/README.md) | 注意力机制核心与掩码复制任务 | `python chapter_07_attention_mechanism/train.py --epochs 1 --num_samples 2000` | 45-90 分钟 |
 | 序列分支 3 | [Chapter 08: Vanilla Transformer](chapter_08_transformer_vanilla/README.md) | 手搓标准 Transformer（排序+翻译） | `python chapter_08_transformer_vanilla/train.py --task sort --epochs 1 --num_samples 2000` | 60-120 分钟 |
+| 序列分支 4 | [Chapter 09: Efficient Attention](chapter_09_efficient_attention/README.md) | MQA/GQA/MLA 与 KV Cache 优化 | `python chapter_09_efficient_attention/demo.py` | 60-120 分钟 |
 
 ## 快速运行导航（按目标）
 
@@ -101,6 +102,16 @@ python chapter_08_transformer_vanilla/train.py --task translate --epochs 1
 你会看到什么：
 - `chapter_08_transformer_vanilla/results/` 下的 `sort_metrics.json` 或 `translate_metrics.json`，以及对应预测文件和 checkpoint。
 
+### 我想比较高效注意力变体（MQA/GQA/MLA）
+
+```bash
+python chapter_09_efficient_attention/demo.py
+python chapter_09_efficient_attention/train.py --variant all --epochs 1 --num_samples 2000
+```
+
+你会看到什么：
+- `chapter_09_efficient_attention/results/` 下的 `attention_compare.json`、`metrics_*.json`、`predictions_*.json`，以及 `checkpoints/` 模型文件。
+
 ## 章节总览
 
 | 章节 | 核心主题 | 关键脚本 | 输入数据 | 输出产物 | 进阶阅读 |
@@ -113,6 +124,7 @@ python chapter_08_transformer_vanilla/train.py --task translate --epochs 1
 | [06](chapter_06_rnn_lstm_seq/README.md) | RNN/LSTM/GRU | `chapter_06_rnn_lstm_seq/main.py` | `chapter_06_rnn_lstm_seq/data/` | `results/`、`checkpoints/` | [CODE_LOGIC_README](chapter_06_rnn_lstm_seq/CODE_LOGIC_README.md) |
 | [07](chapter_07_attention_mechanism/README.md) | Attention Mechanism Core | `chapter_07_attention_mechanism/demo.py` / `train.py` | 随机向量 + masked copy 数据 | `results/`、`checkpoints/` | [CODE_LOGIC_README](chapter_07_attention_mechanism/CODE_LOGIC_README.md) |
 | [08](chapter_08_transformer_vanilla/README.md) | Vanilla Transformer | `chapter_08_transformer_vanilla/train.py` | sort 合成数据 + toy 翻译对 | `results/`、`checkpoints/` | [CODE_LOGIC_README](chapter_08_transformer_vanilla/CODE_LOGIC_README.md) |
+| [09](chapter_09_efficient_attention/README.md) | Efficient Attention Variants | `chapter_09_efficient_attention/demo.py` / `train.py` | 合成 hidden states + toy next-token 数据 | `results/`、`checkpoints/` | [CODE_LOGIC_README](chapter_09_efficient_attention/CODE_LOGIC_README.md) |
 | [Sutskever 实验区](sutskever-implementations/README.md) | 论文机制复现 | 各子目录入口脚本 | 各实验自带数据 | `images/`、`results/`、`checkpoints/` | [总览 README](sutskever-implementations/README.md) |
 
 ## 术语跳转索引
@@ -125,6 +137,7 @@ python chapter_08_transformer_vanilla/train.py --task translate --epochs 1
 - RNN / LSTM / GRU：见 [Chapter 06](chapter_06_rnn_lstm_seq/README.md)
 - Attention Mechanism Core：见 [Chapter 07](chapter_07_attention_mechanism/README.md)
 - Vanilla Transformer：见 [Chapter 08](chapter_08_transformer_vanilla/README.md)
+- Efficient Attention Variants：见 [Chapter 09](chapter_09_efficient_attention/README.md)
 
 ## 仓库地图（精简）
 
@@ -141,6 +154,7 @@ Deep-Learning-From-Scratch-PyTorch/
 ├── chapter_06_rnn_lstm_seq/                # 序列模型
 ├── chapter_07_attention_mechanism/         # 注意力机制核心
 ├── chapter_08_transformer_vanilla/         # 手搓标准 Transformer
+├── chapter_09_efficient_attention/          # 高效注意力变体（MQA/GQA/MLA）
 └── sutskever-implementations/              # 论文机制复现实验区
 ```
 
