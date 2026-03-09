@@ -1,0 +1,14 @@
+{
+  "variant": "gqa",
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 4.887751502990723,
+      "train_token_acc": 0.01825,
+      "val_loss": 4.847745827266148,
+      "val_token_acc": 0.01876923076923077
+    }
+  ],
+  "best_val_loss": 4.847745827266148,
+  "best_val_token_acc": 0.01876923076923077
+}

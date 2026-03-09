@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "device": "mps",
+    "batch_size": 1,
+    "d_model": 512,
+    "num_heads": 8,
+    "num_kv_heads": 2,
+    "latent_dim": 64,
+    "seq_lens": [
+      128,
+      256,
+      512
+    ],
+    "warmup_steps": 10,
+    "measure_steps": 30,
+    "bytes_per_elem": 4
+  },
+  "entries": [
+    {
+      "variant": "mha",
+      "seq_len": 128,
+      "avg_latency_ms": 0.3310513643858334,
+      "tokens_per_second": 386646.948993748,
+      "kv_channels_per_tensor": 512,
+      "kv_cache_bytes": 524288,
+      "kv_cache_mb": 0.5
+    },
+    {
+      "variant": "mqa",
+      "seq_len": 128,
+      "avg_latency_ms": 0.2957916663338741,
+      "tokens_per_second": 432737.0056988702,
+      "kv_channels_per_tensor": 64,
+      "kv_cache_bytes": 65536,
+      "kv_cache_mb": 0.0625
+    },
+    {
+      "variant": "gqa",
+      "seq_len": 128,
+      "avg_latency_ms": 0.2995264017954469,
+      "tokens_per_second": 427341.2935645452,
+      "kv_channels_per_tensor": 128,
+      "kv_cache_bytes": 131072,
+      "kv_cache_mb": 0.125
+    },
+    {
+      "variant": "mla",
+      "seq_len": 128,
+      "avg_latency_ms": 0.35855280002579093,
+      "tokens_per_second": 356990.65797503985,
+      "kv_channels_per_tensor": 64,
+      "kv_cache_bytes": 65536,
+      "kv_cache_mb": 0.0625
+    },
+    {
+      "variant": "mha",
+      "seq_len": 256,
+      "avg_latency_ms": 0.2937653024370472,
+      "tokens_per_second": 871443.9652207049,
+      "kv_channels_per_tensor": 512,
+      "kv_cache_bytes": 1048576,
+      "kv_cache_mb": 1.0
+    },
+    {
+      "variant": "mqa",
+      "seq_len": 256,
+      "avg_latency_ms": 0.30341249657794833,
+      "tokens_per_second": 843735.847690216,
+      "kv_channels_per_tensor": 64,
+      "kv_cache_bytes": 131072,
+      "kv_cache_mb": 0.125
+    },
+    {
+      "variant": "gqa",
+      "seq_len": 256,
+      "avg_latency_ms": 0.30182636498163146,
+      "tokens_per_second": 848169.7747497295,
+      "kv_channels_per_tensor": 128,
+      "kv_cache_bytes": 262144,
+      "kv_cache_mb": 0.25
+    },
+    {
+      "variant": "mla",
+      "seq_len": 256,
+      "avg_latency_ms": 0.3427902663437029,
+      "tokens_per_second": 746812.3372654883,
+      "kv_channels_per_tensor": 64,
+      "kv_cache_bytes": 131072,
+      "kv_cache_mb": 0.125
+    },
+    {
+      "variant": "mha",
+      "seq_len": 512,
+      "avg_latency_ms": 0.3720916652431091,
+      "tokens_per_second": 1376005.021949311,
+      "kv_channels_per_tensor": 512,
+      "kv_cache_bytes": 2097152,
+      "kv_cache_mb": 2.0
+    },
+    {
+      "variant": "mqa",
+      "seq_len": 512,
+      "avg_latency_ms": 0.3385319646137456,
+      "tokens_per_second": 1512412.5740509497,
+      "kv_channels_per_tensor": 64,
+      "kv_cache_bytes": 262144,
+      "kv_cache_mb": 0.25
+    },
+    {
+      "variant": "gqa",
+      "seq_len": 512,
+      "avg_latency_ms": 0.3171277659324308,
+      "tokens_per_second": 1614491.2398149641,
+      "kv_channels_per_tensor": 128,
+      "kv_cache_bytes": 524288,
+      "kv_cache_mb": 0.5
+    },
+    {
+      "variant": "mla",
+      "seq_len": 512,
+      "avg_latency_ms": 0.3866333320426444,
+      "tokens_per_second": 1324252.0951181934,
+      "kv_channels_per_tensor": 64,
+      "kv_cache_bytes": 262144,
+      "kv_cache_mb": 0.25
+    }
+  ],
+  "images": {
+    "latency_curve": "chapter_09_efficient_attention/images/benchmark_latency_curve.png",
+    "kv_cache_curve": "chapter_09_efficient_attention/images/benchmark_kv_cache_curve.png"
+  }
+}

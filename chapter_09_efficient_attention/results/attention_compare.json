@@ -1,0 +1,166 @@
+{
+  "demo": {
+    "meta": {
+      "batch_size": 2,
+      "seq_len": 64,
+      "d_model": 512,
+      "num_heads": 8,
+      "num_kv_heads": 2,
+      "latent_dim": 64,
+      "bytes_per_elem": 4
+    },
+    "variants": [
+      {
+        "variant": "mha",
+        "output_stats": {
+          "shape": [
+            2,
+            64,
+            512
+          ],
+          "mean": 0.0013141141971573234,
+          "std": 0.051981329917907715,
+          "l2_norm": 13.3114652633667
+        },
+        "cosine_similarity_vs_mha": 1.0000009536743164,
+        "l2_difference_vs_mha": 0.0,
+        "kv_channels_per_tensor": 512,
+        "kv_cache_bytes": 524288,
+        "kv_cache_mb": 0.5,
+        "compression_ratio_vs_mha": 1.0
+      },
+      {
+        "variant": "mqa",
+        "output_stats": {
+          "shape": [
+            2,
+            64,
+            512
+          ],
+          "mean": 0.002110258210450411,
+          "std": 0.05086543411016464,
+          "l2_norm": 13.032754898071289
+        },
+        "cosine_similarity_vs_mha": 0.04572556912899017,
+        "l2_difference_vs_mha": 18.198408126831055,
+        "kv_channels_per_tensor": 64,
+        "kv_cache_bytes": 65536,
+        "kv_cache_mb": 0.0625,
+        "compression_ratio_vs_mha": 8.0
+      },
+      {
+        "variant": "gqa",
+        "output_stats": {
+          "shape": [
+            2,
+            64,
+            512
+          ],
+          "mean": 0.0015144392382353544,
+          "std": 0.058204974979162216,
+          "l2_norm": 14.905512809753418
+        },
+        "cosine_similarity_vs_mha": 0.05248383432626724,
+        "l2_difference_vs_mha": 19.456167221069336,
+        "kv_channels_per_tensor": 128,
+        "kv_cache_bytes": 131072,
+        "kv_cache_mb": 0.125,
+        "compression_ratio_vs_mha": 4.0
+      },
+      {
+        "variant": "mla",
+        "output_stats": {
+          "shape": [
+            2,
+            64,
+            512
+          ],
+          "mean": -0.0008033972699195147,
+          "std": 0.05423429235816002,
+          "l2_norm": 13.88550090789795
+        },
+        "cosine_similarity_vs_mha": 0.021411962807178497,
+        "l2_difference_vs_mha": 19.028583526611328,
+        "kv_channels_per_tensor": 64,
+        "kv_cache_bytes": 65536,
+        "kv_cache_mb": 0.0625,
+        "compression_ratio_vs_mha": 8.0
+      }
+    ],
+    "images": {
+      "kv_cache_comparison": "chapter_09_efficient_attention/images/kv_cache_comparison.png",
+      "output_stat_comparison": "chapter_09_efficient_attention/images/output_stat_comparison.png"
+    }
+  },
+  "training": {
+    "meta": {
+      "variant_mode": "all",
+      "device": "mps",
+      "seed": 42,
+      "epochs": 1,
+      "batch_size": 64,
+      "num_samples": 2000,
+      "seq_len": 64,
+      "d_model": 512,
+      "num_heads": 8,
+      "num_kv_heads": 2,
+      "latent_dim": 64
+    },
+    "summaries": [
+      {
+        "variant": "mha",
+        "best_val_loss": 4.850377150944301,
+        "best_val_token_acc": 0.019384615384615386,
+        "metrics_path": "chapter_09_efficient_attention/results/metrics_mha.json",
+        "predictions_path": "chapter_09_efficient_attention/results/predictions_mha.json",
+        "checkpoint_path": "chapter_09_efficient_attention/checkpoints/mha_best.pth",
+        "kv_channels_per_tensor": 512,
+        "kv_cache_bytes": 17039360,
+        "kv_cache_mb": 16.25,
+        "compression_ratio_vs_mha": 1.0
+      },
+      {
+        "variant": "mqa",
+        "best_val_loss": 4.8488176209586005,
+        "best_val_token_acc": 0.018615384615384617,
+        "metrics_path": "chapter_09_efficient_attention/results/metrics_mqa.json",
+        "predictions_path": "chapter_09_efficient_attention/results/predictions_mqa.json",
+        "checkpoint_path": "chapter_09_efficient_attention/checkpoints/mqa_best.pth",
+        "kv_channels_per_tensor": 64,
+        "kv_cache_bytes": 2129920,
+        "kv_cache_mb": 2.03125,
+        "compression_ratio_vs_mha": 8.0
+      },
+      {
+        "variant": "gqa",
+        "best_val_loss": 4.847745827266148,
+        "best_val_token_acc": 0.01876923076923077,
+        "metrics_path": "chapter_09_efficient_attention/results/metrics_gqa.json",
+        "predictions_path": "chapter_09_efficient_attention/results/predictions_gqa.json",
+        "checkpoint_path": "chapter_09_efficient_attention/checkpoints/gqa_best.pth",
+        "kv_channels_per_tensor": 128,
+        "kv_cache_bytes": 4259840,
+        "kv_cache_mb": 4.0625,
+        "compression_ratio_vs_mha": 4.0
+      },
+      {
+        "variant": "mla",
+        "best_val_loss": 4.843981538500104,
+        "best_val_token_acc": 0.018615384615384617,
+        "metrics_path": "chapter_09_efficient_attention/results/metrics_mla.json",
+        "predictions_path": "chapter_09_efficient_attention/results/predictions_mla.json",
+        "checkpoint_path": "chapter_09_efficient_attention/checkpoints/mla_best.pth",
+        "kv_channels_per_tensor": 64,
+        "kv_cache_bytes": 2129920,
+        "kv_cache_mb": 2.03125,
+        "compression_ratio_vs_mha": 8.0
+      }
+    ],
+    "ranking_by_val_loss": [
+      "mla",
+      "gqa",
+      "mqa",
+      "mha"
+    ]
+  }
+}

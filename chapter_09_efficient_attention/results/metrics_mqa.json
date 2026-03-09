@@ -1,0 +1,14 @@
+{
+  "variant": "mqa",
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 4.881892967224121,
+      "train_token_acc": 0.017673076923076923,
+      "val_loss": 4.8488176209586005,
+      "val_token_acc": 0.018615384615384617
+    }
+  ],
+  "best_val_loss": 4.8488176209586005,
+  "best_val_token_acc": 0.018615384615384617
+}
