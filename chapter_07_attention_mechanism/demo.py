@@ -3,8 +3,7 @@ import sys
 import json
 import logging
 import argparse
-from typing import Dict
-from typing import Any
+from typing import Dict, Any
 
 import torch
 

@@ -3,9 +3,7 @@ import sys
 import json
 import logging
 import argparse
-from typing import Dict
-from typing import List
-from typing import Any
+from typing import Dict, List, Any
 
 import torch
 import matplotlib.pyplot as plt
@@ -13,10 +11,7 @@ import matplotlib.pyplot as plt
 # Add project root to Python path
 sys.path.append(os.getcwd())
 
-from chapter_09_efficient_attention.common import AttentionConfig
-from chapter_09_efficient_attention.common import format_bytes_as_megabytes
-from chapter_09_efficient_attention.common import variant_kv_channels
-from chapter_09_efficient_attention.common import estimate_kv_cache_bytes
+from chapter_09_efficient_attention.common import AttentionConfig, format_bytes_as_megabytes, variant_kv_channels, estimate_kv_cache_bytes
 from chapter_09_efficient_attention.model import build_attention_block
 from utils import setup_seed
 

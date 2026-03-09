@@ -12,9 +12,7 @@ sys.path.append(os.getcwd())
 
 from chapter_04_cnn_classic.model import SimpleCNN
 
-from utils import get_device
-from utils import CIFAR10_STATS
-from utils import CIFAR10_CLASSES
+from utils import get_device, CIFAR10_STATS, CIFAR10_CLASSES
 
 logger = logging.getLogger("CNNInference")
 

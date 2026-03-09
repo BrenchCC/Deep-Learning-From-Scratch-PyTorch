@@ -2,10 +2,7 @@
 Reusable training and evaluation loop helpers for classification tasks.
 """
 
-from typing import Any
-from typing import Callable
-from typing import Optional
-from typing import Tuple
+from typing import Any, Callable, Optional, Tuple
 
 import torch
 from tqdm import tqdm

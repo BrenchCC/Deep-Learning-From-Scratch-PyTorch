@@ -1,7 +1,6 @@
 import os
 import sys
-from typing import Optional
-from typing import Tuple
+from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -13,8 +12,7 @@ from chapter_09_efficient_attention.gqa import GroupedQueryAttention
 from chapter_09_efficient_attention.mha import MultiHeadAttention
 from chapter_09_efficient_attention.mla import MultiHeadLatentAttention
 from chapter_09_efficient_attention.mqa import MultiQueryAttention
-from chapter_09_efficient_attention.common import AttentionConfig
-from chapter_09_efficient_attention.common import build_causal_mask
+from chapter_09_efficient_attention.common import AttentionConfig, build_causal_mask
 
 
 def build_attention_block(variant: str, config: AttentionConfig) -> nn.Module:

@@ -3,30 +3,20 @@ import sys
 import json
 import logging
 import argparse
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Tuple
+from typing import Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
-from torch.utils.data import random_split
+from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 
 # Add project root to Python path
 sys.path.append(os.getcwd())
 
-from chapter_08_transformer_vanilla.dataset import PAD_TOKEN_ID
-from chapter_08_transformer_vanilla.dataset import BOS_TOKEN_ID
-from chapter_08_transformer_vanilla.dataset import EOS_TOKEN_ID
-from chapter_08_transformer_vanilla.dataset import SortDataset
-from chapter_08_transformer_vanilla.dataset import ToyTranslationDataset
-from chapter_08_transformer_vanilla.dataset import Seq2SeqCollator
+from chapter_08_transformer_vanilla.dataset import PAD_TOKEN_ID, BOS_TOKEN_ID, EOS_TOKEN_ID, SortDataset, ToyTranslationDataset, Seq2SeqCollator
 from chapter_08_transformer_vanilla.transformer import VanillaTransformer
-from utils import get_device
-from utils import setup_seed
+from utils import get_device, setup_seed
 
 logger = logging.getLogger(__name__)
 

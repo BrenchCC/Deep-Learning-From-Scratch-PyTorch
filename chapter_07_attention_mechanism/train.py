@@ -3,28 +3,20 @@ import sys
 import json
 import logging
 import argparse
-from typing import Dict
-from typing import List
-from typing import Tuple
+from typing import Dict, List, Tuple
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
-from torch.utils.data import Dataset
-from torch.utils.data import random_split
+from torch.utils.data import DataLoader, Dataset, random_split
 from tqdm import tqdm
 
 # Add project root to Python path
 sys.path.append(os.getcwd())
 
-from chapter_07_attention_mechanism.dataset import PAD_TOKEN_ID
-from chapter_07_attention_mechanism.dataset import MASK_TOKEN_ID
-from chapter_07_attention_mechanism.dataset import MaskedCopyDataset
-from chapter_07_attention_mechanism.dataset import MaskedCopyCollator
+from chapter_07_attention_mechanism.dataset import PAD_TOKEN_ID, MASK_TOKEN_ID, MaskedCopyDataset, MaskedCopyCollator
 from chapter_07_attention_mechanism.model import SingleLayerSelfAttentionModel
-from utils import get_device
-from utils import setup_seed
+from utils import get_device, setup_seed
 
 logger = logging.getLogger(__name__)
 

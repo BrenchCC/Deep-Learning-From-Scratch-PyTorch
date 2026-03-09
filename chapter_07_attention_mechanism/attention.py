@@ -1,6 +1,5 @@
 import math
-from typing import Optional
-from typing import Tuple
+from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn

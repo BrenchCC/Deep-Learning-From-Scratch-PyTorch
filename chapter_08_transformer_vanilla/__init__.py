@@ -1,5 +1,4 @@
-from .dataset import SortDataset
-from .dataset import ToyTranslationDataset
+from .dataset import SortDataset, ToyTranslationDataset
 from .transformer import VanillaTransformer
 from .train import train_main
 

@@ -12,10 +12,7 @@ sys.path.append(os.getcwd())
 from chapter_05_resnet_modern_cnn.src.cam import GradCAM, show_cam_on_image
 from chapter_05_resnet_modern_cnn.src.model import resnet18
 
-from utils import get_device
-from utils import setup_seed
-from utils import STL10_STATS
-from utils import STL10_CLASSES
+from utils import get_device, setup_seed, STL10_STATS, STL10_CLASSES
 
 logger = logging.getLogger("ResNetInference")
 

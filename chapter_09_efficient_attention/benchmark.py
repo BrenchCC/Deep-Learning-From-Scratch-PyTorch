@@ -4,9 +4,7 @@ import json
 import time
 import logging
 import argparse
-from typing import Dict
-from typing import List
-from typing import Any
+from typing import Dict, List, Any
 
 import torch
 import matplotlib.pyplot as plt
@@ -15,14 +13,9 @@ from tqdm import tqdm
 # Add project root to Python path
 sys.path.append(os.getcwd())
 
-from chapter_09_efficient_attention.common import AttentionConfig
-from chapter_09_efficient_attention.common import format_bytes_as_megabytes
-from chapter_09_efficient_attention.common import variant_kv_channels
-from chapter_09_efficient_attention.common import estimate_kv_cache_bytes
-from chapter_09_efficient_attention.common import build_causal_mask
+from chapter_09_efficient_attention.common import AttentionConfig, format_bytes_as_megabytes, variant_kv_channels, estimate_kv_cache_bytes, build_causal_mask
 from chapter_09_efficient_attention.model import build_attention_block
-from utils import get_device
-from utils import setup_seed
+from utils import get_device, setup_seed
 
 logger = logging.getLogger(__name__)
 

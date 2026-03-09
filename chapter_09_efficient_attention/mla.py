@@ -1,7 +1,6 @@
 import os
 import sys
-from typing import Optional
-from typing import Tuple
+from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -9,8 +8,7 @@ import torch.nn as nn
 # Add project root to Python path
 sys.path.append(os.getcwd())
 
-from chapter_09_efficient_attention.common import AttentionConfig
-from chapter_09_efficient_attention.common import scaled_dot_product
+from chapter_09_efficient_attention.common import AttentionConfig, scaled_dot_product
 
 
 class MultiHeadLatentAttention(nn.Module):

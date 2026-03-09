@@ -1,7 +1,5 @@
 import random
-from typing import Dict
-from typing import List
-from typing import Tuple
+from typing import Dict, List, Tuple
 
 from torch.utils.data import Dataset
 

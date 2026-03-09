@@ -13,11 +13,7 @@ sys.path.append(os.getcwd())
 from chapter_06_rnn_lstm_seq.model import DynamicRNNClassifier
 from chapter_06_rnn_lstm_seq.dataset import SyntheticNameDataset, VectorizedCollator
 
-from utils import get_device
-from utils import save_json
-from utils import setup_seed
-from utils import log_model_info
-from utils import run_classification_epoch
+from utils import get_device, save_json, setup_seed, log_model_info, run_classification_epoch
 
 logger = logging.getLogger("RNN_Experiment")
 

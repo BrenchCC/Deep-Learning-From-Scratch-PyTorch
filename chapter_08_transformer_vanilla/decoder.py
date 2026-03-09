@@ -1,11 +1,10 @@
-from typing import Optional
-from typing import Tuple
+from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
 
-from .attention import MultiHeadAttention
-from .feed_forward import PositionwiseFeedForward
+from chapter_08_transformer_vanilla.attention import MultiHeadAttention
+from chapter_08_transformer_vanilla.feed_forward import PositionwiseFeedForward
 
 
 class TransformerDecoderLayer(nn.Module):

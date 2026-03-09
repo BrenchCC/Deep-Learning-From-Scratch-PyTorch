@@ -17,11 +17,7 @@ sys.path.append(os.getcwd())
 from chapter_05_resnet_modern_cnn.src.dataset import get_stl10_loaders
 from chapter_05_resnet_modern_cnn.src.model import resnet18, resnet34
 
-from utils import get_device
-from utils import save_json
-from utils import setup_seed
-from utils import count_parameters
-from utils import run_classification_epoch
+from utils import get_device, save_json, setup_seed, count_parameters, run_classification_epoch
 
 logger = logging.getLogger("ModelTraining")
 

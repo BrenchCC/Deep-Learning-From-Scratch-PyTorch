@@ -13,12 +13,7 @@ sys.path.append(os.getcwd())
 
 from chapter_04_cnn_classic.model import SimpleCNN
 
-from utils import get_device
-from utils import save_json
-from utils import setup_seed
-from utils import CIFAR10_STATS
-from utils import log_model_info
-from utils import run_classification_epoch
+from utils import get_device, save_json, setup_seed, CIFAR10_STATS, log_model_info, run_classification_epoch
 
 logger = logging.getLogger("TrainCIFAR")
 

@@ -3,30 +3,21 @@ import sys
 import json
 import logging
 import argparse
-from typing import Dict
-from typing import List
-from typing import Tuple
+from typing import Dict, List, Tuple
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
-from torch.utils.data import random_split
+from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
 
 # Add project root to Python path
 sys.path.append(os.getcwd())
 
-from chapter_09_efficient_attention.dataset import PAD_TOKEN_ID
-from chapter_09_efficient_attention.dataset import ToyNextTokenDataset
-from chapter_09_efficient_attention.dataset import ToyNextTokenCollator
-from chapter_09_efficient_attention.common import AttentionConfig
-from chapter_09_efficient_attention.common import variant_kv_channels
-from chapter_09_efficient_attention.common import estimate_kv_cache_bytes
-from chapter_09_efficient_attention.common import format_bytes_as_megabytes
+from chapter_09_efficient_attention.dataset import PAD_TOKEN_ID, ToyNextTokenDataset, ToyNextTokenCollator
+from chapter_09_efficient_attention.common import AttentionConfig, variant_kv_channels, estimate_kv_cache_bytes, format_bytes_as_megabytes
 from chapter_09_efficient_attention.model import EfficientAttentionLM
-from utils import get_device
-from utils import setup_seed
+from utils import get_device, setup_seed
 
 logger = logging.getLogger(__name__)
 
