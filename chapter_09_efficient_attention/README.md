@@ -24,7 +24,7 @@
 |---|---|---|
 | MHA 标准形式 | `mha.py` | $Q/K/V$ 全头独立 |
 | MQA 共享 K/V | `mqa.py` | Query 多头，K/V 单头共享 |
-| GQA 分组共享 | `gqa.py` | $\frac{\text{num\_heads}}{\text{num\_kv\_heads}}$ 组映射 |
+| GQA 分组共享 | `gqa.py` | `num_heads / num_kv_heads` 组映射 |
 | MLA 低秩压缩 | `mla.py` | `compress -> expand -> attention` |
 | 统一配置与复杂度估算 | `common.py` | `AttentionConfig` 与 KV Cache 估算函数 |
 | 统一模型壳 | `model.py` | `build_attention_block` + `EfficientAttentionLM` |
@@ -56,7 +56,7 @@ python chapter_09_efficient_attention/train.py --variant all --epochs 1 --num_sa
 在自回归推理中，历史 token 的 $K/V$ 会被缓存。若序列长度为 $S$，batch 为 $B$，每个 $K$ 或 $V$ 的通道数为 $C_{kv}$，元素字节数为 $b$，则 KV Cache 近似为：
 
 $$
-\text{KVCacheBytes} \approx 2 \cdot B \cdot S \cdot C_{kv} \cdot b
+\mathrm{KVCacheBytes} \approx 2 \cdot B \cdot S \cdot C_{kv} \cdot b
 $$
 
 其中系数 $2$ 来自同时缓存 $K$ 与 $V$。
@@ -79,14 +79,14 @@ $$
 每个头有独立 $W_i^Q, W_i^K, W_i^V$：
 
 $$
-\text{head}_i = \mathrm{Attention}(QW_i^Q, KW_i^K, VW_i^V)
+\mathrm{head}_i = \mathrm{Attention}(QW_i^Q, KW_i^K, VW_i^V)
 $$
 
 $$
-\mathrm{MHA}(Q, K, V) = \mathrm{Concat}(\text{head}_1, ..., \text{head}_h)W^O
+\mathrm{MHA}(Q, K, V) = \mathrm{Concat}(\mathrm{head}_1, \ldots, \mathrm{head}_h)W^O
 $$
 
-KV 通道（单个 $K$ 或 $V$）为 $d_{\text{model}}$。
+KV 通道（单个 $K$ 或 $V$）为 $d_{\mathrm{model}}$。
 
 ### 2.3 MQA（Multi-Query Attention）
 多个 Query 头共享同一组 $K/V$：
@@ -98,14 +98,14 @@ $$
 其中 $i = 1, \ldots, h$。KV 通道降为：
 
 $$
-C_{kv}^{MQA} = \frac{d_{model}}{h}
+C_{kv}^{MQA} = \frac{d_{\mathrm{model}}}{h}
 $$
 
 ### 2.4 GQA（Grouped-Query Attention）
 将 $h$ 个 query 头分成 $g$ 组，每组共享一组 $K/V$：
 
 $$
-C_{kv}^{GQA} = g \cdot \frac{d_{model}}{h}
+C_{kv}^{GQA} = g \cdot \frac{d_{\mathrm{model}}}{h}
 $$
 
 当 $g = h$ 时退化为 MHA；当 $g = 1$ 时退化为 MQA。
@@ -137,7 +137,10 @@ $$
 对于教学实现中的 MLA，重构可写为：
 
 $$
-\tilde{K} = H W_{down}^K W_{up}^K,\quad
+\tilde{K} = H W_{down}^K W_{up}^K
+$$
+
+$$
 \tilde{V} = H W_{down}^V W_{up}^V
 $$
 
@@ -165,8 +168,12 @@ $$
 
 $$
 \left|\frac{q^\top K_t}{\sqrt{d_k}} - \frac{q^\top \tilde{K}_t}{\sqrt{d_k}}\right|
-= \frac{|q^\top e_t^K|}{\sqrt{d_k}}
-\le \frac{\|q\|_2\|e_t^K\|_2}{\sqrt{d_k}}
+\le \frac{|q^\top e_t^K|}{\sqrt{d_k}}
+$$
+
+$$
+\frac{|q^\top e_t^K|}{\sqrt{d_k}}
+\le \frac{\|q\|_2 \|e_t^K\|_2}{\sqrt{d_k}}
 $$
 
 结论：
@@ -207,7 +214,7 @@ Decode（自回归单步）主要项：
 ---
 
 ## 4. 参数、复杂度与 KV Cache 的分解对比
-设 $d = d_{\text{model}}$, $h = \text{num\_heads}$, $g = \text{num\_kv\_heads}$, $r = \text{latent\_dim}$。
+设 `d = d_model`、`h = num_heads`、`g = num_kv_heads`、`r = latent_dim`。
 
 ### 4.1 KV 通道（单个 K 或 V）
 - MHA: $d$
@@ -218,7 +225,7 @@ Decode（自回归单步）主要项：
 ### 4.2 KV Cache 近似
 
 $$
-\text{KVCache} \propto 2 \cdot B \cdot S \cdot C_{kv}
+\mathrm{KVCache} \propto 2 \cdot B \cdot S \cdot C_{kv}
 $$
 
 因此在固定 $B,S$ 下，缓存占用只由 $C_{kv}$ 控制。
@@ -269,16 +276,16 @@ $$
 3. KV Cache 数值对比来自解析估算函数与实验统计，用于趋势判断。
 
 ### 4.6 内存预算约束下的选型反推（重要）
-给定可用 KV Cache 预算 $M_{\text{budget}}$（bytes），则必须满足：
+给定可用 KV Cache 预算 $M_{\mathrm{budget}}$（bytes），则必须满足：
 
 $$
-2 \cdot B \cdot S \cdot C_{kv} \cdot b \le M_{budget}
+2 \cdot B \cdot S \cdot C_{kv} \cdot b \le M_{\mathrm{budget}}
 $$
 
 可得允许的最大 KV 通道：
 
 $$
-C_{kv}^{\max} = \frac{M_{\text{budget}}}{2BSb}
+C_{kv}^{\max} = \frac{M_{\mathrm{budget}}}{2BSb}
 $$
 
 于是得到选型约束：
@@ -304,13 +311,10 @@ $$
 先由预算求 $C_{kv}^{\max}$，再决定是调 $g$（GQA）还是调 $r$（MLA）。
 
 ### 4.7 效果-成本联合目标（理论化选型）
-高效注意力选型可写成联合优化问题，而不是只比较单一指标。设变体为 $v \in \{\text{MHA}, \text{MQA}, \text{GQA}, \text{MLA}\}$，参数为 $\theta_v$，定义：
+高效注意力选型可写成联合优化问题，而不是只比较单一指标。设变体为 $v \in \{\mathrm{MHA}, \mathrm{MQA}, \mathrm{GQA}, \mathrm{MLA}\}$，参数为 $\theta_v$，定义：
 
 $$
-\mathcal{J}(v, \theta_v) =
-\mathcal{L}_{task}(\theta_v) +
-\lambda_{mem} \cdot \mathrm{Mem}(v) +
-\lambda_{lat} \cdot \mathrm{Lat}(v)
+\mathcal{J}(v, \theta_v) = \mathcal{L}_{task}(\theta_v) + \lambda_{mem} \cdot \mathrm{Mem}(v) + \lambda_{lat} \cdot \mathrm{Lat}(v)
 $$
 
 其中：
@@ -331,7 +335,7 @@ $$
 - $h = 8$
 - $g = 2$
 - $r = 64$
-- $fp16$（$b = 2$ bytes）
+- $\mathrm{fp16}$（$b = 2$ bytes）
 
 ### 5.1 各变体 $C_{kv}$
 - MHA: $512$
@@ -342,7 +346,7 @@ $$
 ### 5.2 KV Cache 大小
 
 $$
-\text{KVCacheBytes} = 2 \cdot B \cdot S \cdot C_{kv} \cdot b
+\mathrm{KVCacheBytes} = 2 \cdot B \cdot S \cdot C_{kv} \cdot b
 $$
 
 计算结果：
@@ -372,10 +376,10 @@ $$
 3. MLA 的优势是否成立，取决于 $r$ 是否足够小且重构误差可接受。
 
 ### 5.4 超长上下文扩展示例（$S = 32768$）
-固定 $B = 1, d = 512, h = 8, g = 2, r = 64, fp16\ (b = 2)$：
+固定 $B = 1$、$d = 512$、$h = 8$、$g = 2$、$r = 64$、$\mathrm{fp16}$（$b = 2$）：
 
 $$
-\text{KVCacheBytes} = 2 \cdot B \cdot S \cdot C_{kv} \cdot b
+\mathrm{KVCacheBytes} = 2 \cdot B \cdot S \cdot C_{kv} \cdot b
 $$
 
 结果如下：

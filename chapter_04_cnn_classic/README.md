@@ -111,14 +111,19 @@ python chapter_04_cnn_classic/inference.py --img_dir ./chapter_04_cnn_classic/da
     * 空洞卷积（Atrous Convolution）。在卷积核元素之间插入空格，用于在不增加参数量的情况下扩大感受野。
 6.  **`groups` ($g$)**：
     * 分组卷积。默认 $g=1$（全连接卷积）。
-    * 当 $g = \text{in\\_channels} = \text{out\\_channels}$ 时，为 **Depthwise Convolution**（如 MobileNet），每个通道独立卷积，极大降低参数量。
+    * 当 `g = in_channels = out_channels` 时，为 **Depthwise Convolution**（如 MobileNet），每个通道独立卷积，极大降低参数量。
 
 ### 2.2 维度变化公式 (Dimension Arithmetic)
 ![image](sources/theory_05_dimension_calculation.png)
 对于输入维度 $(N, C_{in}, H_{in}, W_{in})$，经过 `Conv2d` 后输出 $(N, C_{out}, H_{out}, W_{out})$：
 
-$$ 
-H_{out} = \lfloor \frac{H_{in} + 2 \times \text{padding}[0] - \text{dilation}[0] \times (\text{kernel\\_size}[0] - 1) - 1}{\text{stride}[0]} + 1 \rfloor 
+令 `p_0 = padding[0]`、`d_0 = dilation[0]`、`k_0 = kernel_size[0]`、`s_0 = stride[0]`，则：
+
+$$
+H_{out} =
+\left\lfloor
+\frac{H_{in} + 2 p_0 - d_0 (k_0 - 1) - 1}{s_0} + 1
+\right\rfloor
 $$
 
 *注：$W_{out}$ 的计算同理。*
@@ -146,14 +151,19 @@ $$
 **数据**：
 
 $$
-\text{Input} = \begin{bmatrix}
+\mathrm{Input} =
+\begin{bmatrix}
 1 & 1 & 1 & 0 & 0 \\
 0 & 1 & 1 & 1 & 0 \\
 0 & 0 & 1 & 1 & 1 \\
 0 & 0 & 1 & 1 & 0 \\
 0 & 1 & 1 & 0 & 0
-\end{bmatrix}, \quad
-\text{Kernel} = \begin{bmatrix}
+\end{bmatrix}
+$$
+
+$$
+\mathrm{Kernel} =
+\begin{bmatrix}
 1 & 0 & 1 \\
 0 & 1 & 0 \\
 1 & 0 & 1
@@ -164,7 +174,8 @@ $$
 覆盖区域为 Input 的左上 $3 \times 3$ 子块：
 
 $$
-\text{Region} = \begin{bmatrix}
+\mathrm{Region} =
+\begin{bmatrix}
 1 & 1 & 1 \\
 0 & 1 & 1 \\
 0 & 0 & 1
@@ -174,13 +185,19 @@ $$
 进行 **Element-wise Product** (Hadamard Product) 然后 **Sum**:
 
 $$
-\begin{aligned}
-O_{0,0} &= (1 \times 1) + (1 \times 0) + (1 \times 1) \\
-        &+ (0 \times 0) + (1 \times 1) + (1 \times 0) \\
-        &+ (0 \times 1) + (0 \times 0) + (1 \times 1) \\
-        &= 1 + 0 + 1 + 0 + 1 + 0 + 0 + 0 + 1 \\
-        &= 4
-\end{aligned}
+O_{0,0} = (1 \times 1) + (1 \times 0) + (1 \times 1)
+$$
+
+$$
++ (0 \times 0) + (1 \times 1) + (1 \times 0)
+$$
+
+$$
++ (0 \times 1) + (0 \times 0) + (1 \times 1)
+$$
+
+$$
+= 1 + 0 + 1 + 0 + 1 + 0 + 0 + 0 + 1 = 4
 $$
 
 输出尺寸计算：$(5 - 3) / 1 + 1 = 3$，故输出为 $3 \times 3$ 矩阵。
@@ -195,11 +212,15 @@ $$
 **Step 1: 维度变换计算**
 
 $$
-\begin{aligned}
-H_{out} &= \lfloor \frac{32 + 2 \times 1 - 1 \times (3 - 1) - 1}{2} + 1 \rfloor \\
-        &= \lfloor \frac{32 + 2 - 2 - 1}{2} + 1 \rfloor \\
-        &= \lfloor \frac{31}{2} + 1 \rfloor = 15 + 1 = 16
-\end{aligned}
+H_{out} = \left\lfloor \frac{32 + 2 \times 1 - 1 \times (3 - 1) - 1}{2} + 1 \right\rfloor
+$$
+
+$$
+= \left\lfloor \frac{32 + 2 - 2 - 1}{2} + 1 \right\rfloor
+$$
+
+$$
+= \left\lfloor \frac{31}{2} + 1 \right\rfloor = 15 + 1 = 16
 $$
 
 输出 Tensor 形状: $(N, 16, 16, 16)$。
@@ -208,13 +229,18 @@ $$
 **Step 2: 参数量统计 (Parameter Count)**
 每一个输出通道对应一个独立的 3D 卷积核（维度为 $C_{in} \times K \times K$）。
 
+记卷积核高宽为 $k_h, k_w$，输入输出通道为 $C_{in}, C_{out}$，则：
+
 $$
-\begin{aligned}
-\text{Params} &= (\text{kernel\\_h} \times \text{kernel\\_w} \times \text{in\\_channels}) \times \text{out\\_channels} + \text{bias} \\
-              &= (3 \times 3 \times 3) \times 16 + 16 \\
-              &= 27 \times 16 + 16 \\
-              &= 432 + 16 = 448
-\end{aligned}
+\mathrm{Params} = (k_h \times k_w \times C_{in}) \times C_{out} + \mathrm{bias}
+$$
+
+$$
+= (3 \times 3 \times 3) \times 16 + 16
+$$
+
+$$
+= 27 \times 16 + 16 = 432 + 16 = 448
 $$
 
 **Code Snippet (Reference Style)**:

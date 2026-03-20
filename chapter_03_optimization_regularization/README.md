@@ -215,7 +215,7 @@ Dropout 的核心解释是**集成学习 (Ensemble Learning)**。一个包含 $N
 **Inverted Dropout (现代常用实现)**:
 为了让推理阶段的代码更简单（无需缩放），我们在**训练阶段**就进行缩放。
 
-设输入 $x$，mask向量 $m \sim \text{Bernoulli}(1-p)$ (保留概率为 $1-p$)。
+设输入 $x$，mask 向量 $m \sim \mathrm{Bernoulli}(1 - p)$（保留概率为 $1 - p$）。
 
 **Training**:
 
@@ -260,20 +260,26 @@ RMSNorm 移除了均值计算部分，仅利用均方根（RMS）进行缩放。
 **LayerNorm 回顾**:
 
 $$
-\bar{x} = \frac{x - \mu}{\sigma}, \quad \text{where } \mu = \frac{1}{D}\sum x_i
+\bar{x} = \frac{x - \mu}{\sigma}
+$$
+
+其中：
+
+$$
+\mu = \frac{1}{D}\sum x_i
 $$
 
 **RMSNorm 计算**:
 我们直接计算均方根 (RMS):
 
 $$
-\text{RMS}(x) = \sqrt{\frac{1}{D} \sum_{i=1}^{D} x_i^2 + \epsilon}
+\mathrm{RMS}(x) = \sqrt{\frac{1}{D} \sum_{i=1}^{D} x_i^2 + \epsilon}
 $$
 
 归一化与缩放 (Scaling):
 
 $$
-\bar{x}_i = \frac{x_i}{\text{RMS}(x)} \cdot g_i
+\bar{x}_i = \frac{x_i}{\mathrm{RMS}(x)} \cdot g_i
 $$
 
 *(其中 $g_i$ 是可学习的缩放参数，RMSNorm 去掉了 LN 中的偏置项 $\beta$)*
@@ -282,7 +288,7 @@ $$
 
 * **Simple Example**:
     向量 $x = [3, 4]$。
-    * $\text{RMS} = \sqrt{(9+16)/2} = \sqrt{12.5} \approx 3.53$
+    * $\mathrm{RMS} = \sqrt{(9+16)/2} = \sqrt{12.5} \approx 3.53$
     * Output $\approx [3/3.53, 4/3.53] \approx [0.85, 1.13]$ (保留了相对大小，限制了幅值)。
 
 * **Complex Example (Llama 2 Architecture)**:
@@ -330,7 +336,7 @@ $$
 2.  计算缩放系数 (Clipping Coefficient):
 
 $$
-\text{scale} = \min\left(1, \frac{C}{\|g\|_2 + \epsilon}\right)
+\mathrm{scale} = \min\left(1, \frac{C}{\|g\|_2 + \epsilon}\right)
 $$
 
 *(如果 $\|g\|_2 \le C$，scale 为 1，不做改变；否则 scale < 1)*
@@ -338,7 +344,7 @@ $$
 3.  更新梯度:
 
 $$
-g \leftarrow g \cdot \text{scale}
+g \leftarrow g \cdot \mathrm{scale}
 $$
 
 #### 简单与复杂示例 (Examples)
@@ -387,7 +393,7 @@ $$
 $$
 
 * **L1 Norm**: $\Omega(\theta) = \|\theta\|_1 = \sum |\theta_i|$
-    * 梯度（Subgradient）: $\lambda \cdot \text{sign}(\theta)$
+    * 梯度（Subgradient）: $\lambda \cdot \mathrm{sign}(\theta)$
     * 更新包含一个常数项减法，容易让权重正好减到 0。
 
 * **L2 Norm**: $\Omega(\theta) = \frac{1}{2} \|\theta\|_2^2 = \frac{1}{2} \sum \theta_i^2$
@@ -417,7 +423,7 @@ loss = criterion(output, target) + l1_lambda * l1_norm
 * **Weight Decay (Decoupled)**: 无论梯度如何，直接在更新步骤中让权重衰减：
 
 $$
-\theta_{t+1} = (1 - \lambda \eta)\theta_t - \eta \cdot \text{AdamStep}
+\theta_{t+1} = (1 - \lambda \eta)\theta_t - \eta \cdot \mathrm{AdamStep}
 $$
 
 #### 通俗解释 (Intuitive Explanation)
@@ -525,7 +531,11 @@ Label Smoothing 将硬目标替换为硬目标和均匀分布的加权混合。
 原始 One-hot 目标 $y$:
 
 $$
-y_k = \begin{cases} 1 & \text{if } k = \text{target} \\ 0 & \text{if } k \neq \text{target} \end{cases}
+y_k =
+\begin{cases}
+1, & k = \mathrm{target} \\
+0, & k \ne \mathrm{target}
+\end{cases}
 $$
 
 平滑后的目标 $y^{LS}$:

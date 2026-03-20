@@ -220,11 +220,11 @@ self.downsample = nn.Sequential(
 
 * **Calculation Process (计算过程)**:
     1.  **Conv1**: 
-        $$\text{out}_1 = x \cdot w_1 = 2.0 \cdot 0.5 = 1.0$$
+        $$\mathrm{out}_1 = x \cdot w_1 = 2.0 \cdot 0.5 = 1.0$$
     2.  **ReLU**: 
         $$\sigma(1.0) = 1.0$$
     3.  **Conv2 (Residual Function $F(x)$ output)**: 
-        $$F(x) = \text{out}_1 \cdot w_2 = 1.0 \cdot (-0.1) = -0.1$$
+        $$F(x) = \mathrm{out}_1 \cdot w_2 = 1.0 \cdot (-0.1) = -0.1$$
     4.  **Addition (Shortcut)**: 
         $$H(x) = F(x) + x = -0.1 + 2.0 = 1.9$$
     5.  **Final ReLU**: 
@@ -351,13 +351,13 @@ if __name__ == "__main__":
 在工程实现中（特别是 PyTorch 官方实现），有一个非常实用的 Trick 涉及到 Batch Normalization 的权重初始化。
 
 * **原理**：
-    对于残差块 $x_{out} = \text{ReLU}(x_{in} + F(x_{in}))$，最后一层通常是 BN。
+    对于残差块 $x_{out} = \mathrm{ReLU}(x_{in} + F(x_{in}))$，最后一层通常是 BN。
     BN 的运算为 $y = \gamma \hat{x} + \beta$。
 * **操作**：
     将残差分支中**最后一个 BN 层**的权重 $\gamma$ 初始化为 **0** (默认为 1)。
 * **效果**：
     * 初始化时，$\gamma=0$ 导致 $F(x_{in}) \approx 0$。
-    * 此时 $x_{out} \approx \text{ReLU}(x_{in})$，整个网络在初始阶段退化为**恒等映射 (Identity Mapping)**。
+    * 此时 $x_{out} \approx \mathrm{ReLU}(x_{in})$，整个网络在初始阶段退化为**恒等映射 (Identity Mapping)**。
     * 这使得信号在初始阶段可以无损地穿过深层网络，极大地加速了模型收敛，就像是在浅层网络上训练一样。
 
 ---

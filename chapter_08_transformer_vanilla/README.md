@@ -107,13 +107,13 @@ $$
 设 `d_model` 被拆成 `h` 个头，每头维度 `d_k = d_model / h`。第 `i` 个头：
 
 $$
-\text{head}_i = \mathrm{Attention}(QW_i^Q, KW_i^K, VW_i^V)
+\mathrm{head}_i = \mathrm{Attention}(QW_i^Q, KW_i^K, VW_i^V)
 $$
 
 最终输出：
 
 $$
-\mathrm{MHA}(Q,K,V)=\mathrm{Concat}(head_1,\ldots,head_h)W^O
+\mathrm{MHA}(Q, K, V) = \mathrm{Concat}(\mathrm{head}_1, \ldots, \mathrm{head}_h)W^O
 $$
 
 ### 2.2 通俗解释（Intuitive Explanation）
@@ -143,11 +143,11 @@ $$
 自注意力对输入排列是置换等变的，不天然知道“第几个 token”。正弦余弦位置编码定义：
 
 $$
-PE(pos,2i)=\sin\left(pos / 10000^{2i/d_{model}}\right)
+PE(pos, 2i) = \sin\left(pos / 10000^{2i / d_{\mathrm{model}}}\right)
 $$
 
 $$
-PE(pos,2i+1)=\cos\left(pos / 10000^{2i/d_{model}}\right)
+PE(pos, 2i + 1) = \cos\left(pos / 10000^{2i / d_{\mathrm{model}}}\right)
 $$
 
 ### 3.2 置换等变简证

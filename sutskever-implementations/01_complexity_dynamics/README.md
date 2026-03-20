@@ -61,8 +61,10 @@ $$
 
 ### 3.5 二维扩散离散更新（邻域平均形式）
 $$
-u_{i,j}^{t+1} = (1-r)u_{i,j}^{t} + r\,\bar{u}_{\mathcal{N}(i,j)}^t,
-\quad
+u_{i,j}^{t+1} = (1-r)u_{i,j}^{t} + r\,\bar{u}_{\mathcal{N}(i,j)}^t
+$$
+
+$$
 \bar{u}_{\mathcal{N}(i,j)}^t = \frac{u_{i-1,j}^t + u_{i+1,j}^t + u_{i,j-1}^t + u_{i,j+1}^t}{4}
 $$
 

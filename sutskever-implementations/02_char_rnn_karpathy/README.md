@@ -36,7 +36,7 @@ y_t = W_{hy}h_t + b_y
 $$
 
 $$
-p_t = \text{softmax}(y_t)
+p_t = \mathrm{softmax}(y_t)
 $$
 
 对应代码：`VanillaRNN.forward()`。
@@ -54,31 +54,37 @@ $$
 $$
 
 $$
-\nabla_{W_{hy}} L += \delta y_t h_t^\top,
-\quad
+\nabla_{W_{hy}} L += \delta y_t h_t^\top
+$$
+
+$$
 \nabla_{b_y} L += \delta y_t
 $$
 
 $$
-\delta h_t = W_{hy}^\top \delta y_t + \delta h_{t+1}^{\text{(recur)}}
+\delta h_t = W_{hy}^\top \delta y_t + \delta h_{t+1}^{(\mathrm{recur})}
 $$
 
 $$
-\delta h_t^{\text{raw}} = (1 - h_t^2) \odot \delta h_t
+\delta h_t^{\mathrm{raw}} = (1 - h_t^2) \odot \delta h_t
 $$
 
 $$
-\nabla_{W_{xh}} L += \delta h_t^{\text{raw}} x_t^\top,
-\quad
-\nabla_{W_{hh}} L += \delta h_t^{\text{raw}} h_{t-1}^\top,
-\quad
-\delta h_{t-1}^{\text{(recur)}} = W_{hh}^\top \delta h_t^{\text{raw}}
+\nabla_{W_{xh}} L += \delta h_t^{\mathrm{raw}} x_t^\top
+$$
+
+$$
+\nabla_{W_{hh}} L += \delta h_t^{\mathrm{raw}} h_{t-1}^\top
+$$
+
+$$
+\delta h_{t-1}^{(\mathrm{recur})} = W_{hh}^\top \delta h_t^{\mathrm{raw}}
 $$
 对应代码：`VanillaRNN.backward()`。
 
 ### 3.4 Gradient Clipping
 $$
-g \leftarrow \text{clip}(g, -5, 5)
+g \leftarrow \mathrm{clip}(g, -5, 5)
 $$
 用于抑制梯度爆炸，对应 `np.clip(..., -5, 5)`。
 
@@ -94,8 +100,10 @@ $$
 对应 `train_rnn()` 中 `mem += dparam * dparam` 与更新式。
 
 ### 3.6 平滑损失 (Smooth Loss)
+记平滑损失为 $s_t$，则：
+
 $$
-\text{smooth\_loss}_t = 0.999\cdot\text{smooth\_loss}_{t-1} + 0.001\cdot L_t
+s_t = 0.999 \cdot s_{t-1} + 0.001 \cdot L_t
 $$
 对应训练日志曲线，减少短期抖动。
 
@@ -105,7 +113,7 @@ $$
 | 前向传播 | $h_t, y_t, p_t$ | `VanillaRNN.forward()` |
 | 序列损失 | $L$ | `VanillaRNN.loss()` |
 | 时间反传 | BPTT 递推式 | `VanillaRNN.backward()` |
-| 梯度裁剪 | $\text{clip}(g)$ | `VanillaRNN.backward()` |
+| 梯度裁剪 | $\mathrm{clip}(g)$ | `VanillaRNN.backward()` |
 | Adagrad | $G_t, \theta$ 更新 | `train_rnn()` |
 | 文本采样 | 按 $p_t$ 抽样 | `VanillaRNN.sample()` |
 

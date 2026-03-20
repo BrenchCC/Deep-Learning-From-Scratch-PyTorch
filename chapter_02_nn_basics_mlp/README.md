@@ -89,11 +89,11 @@ $$
     * **特点**：输出在 (0, 1)，平滑。
     * **缺点**：容易导致梯度消失（Gradient Vanishing），特别是在深层网络中；输出不是 Zero-centered。
 * **ReLU (Rectified Linear Unit)**:
-    * $\text{ReLU}(z) = \max(0, z)$
+    * $\mathrm{ReLU}(z) = \max(0, z)$
     * **特点**：计算极其简单，解决了正区间的梯度消失问题，稀疏性。
     * **缺点**：Dead ReLU 问题（负区间梯度为 0，神经元可能永久死亡）。
 * **GELU (Gaussian Error Linear Unit)**:
-    * $\text{GELU}(x) = x \Phi(x)$
+    * $\mathrm{GELU}(x) = x \Phi(x)$
     * **特点**：在 BERT、GPT 等现代 LLM 中广泛使用。它是 ReLU 的平滑版本，且引入了随机正则化的思想（基于高斯分布）。它允许小的负值通过，保留了更多信息。
 
 ---
@@ -176,7 +176,7 @@ $$
 * **Model Architecture**: 带有 ReLU 激活函数的 MLP（1 Hidden Layer, e.g., 50 Neurons）。
     
 $$
-\hat{y} = \sum_{i=1}^{50} w_{2,i} \cdot \text{ReLU}(w_{1,i} \cdot x + b_{1,i}) + b_2
+\hat{y} = \sum_{i=1}^{50} w_{2,i} \cdot \mathrm{ReLU}(w_{1,i} \cdot x + b_{1,i}) + b_2
 $$
 
 * **Mechanism (Visual Intuition)**:
@@ -309,7 +309,7 @@ model_complex = nn.Sequential(
 在标准的 Transformer Block 中：
 
 $$
-\text{Block}(x) = \text{Attention}(x) + \text{MLP}(x)
+\mathrm{Block}(x) = \mathrm{Attention}(x) + \mathrm{MLP}(x)
 $$
 
 MLP 层（通常称为 FFN - Feed Forward Network）占据了模型约 **2/3 的参数量**。

@@ -94,7 +94,16 @@ $$
 导数不再是标量，而是**雅可比矩阵（Jacobian Matrix）** $J$：
 
 $$
-J = \frac{\partial \mathbf{y}}{\partial \mathbf{x}} = \begin{bmatrix} \frac{\partial y_1}{\partial x_1} & \cdots & \frac{\partial y_1}{\partial x_n} \\ \vdots & \ddots & \vdots \\ \frac{\partial y_m}{\partial x_1} & \cdots & \frac{\partial y_m}{\partial x_n} \end{bmatrix}
+J = \frac{\partial \mathbf{y}}{\partial \mathbf{x}}
+$$
+
+$$
+=
+\begin{bmatrix}
+\frac{\partial y_1}{\partial x_1} & \cdots & \frac{\partial y_1}{\partial x_n} \\
+\vdots & \ddots & \vdots \\
+\frac{\partial y_m}{\partial x_1} & \cdots & \frac{\partial y_m}{\partial x_n}
+\end{bmatrix}
 $$
 
 在反向传播中，我们需要计算标量 Loss $L$ 对向量 $\mathbf{x}$ 的梯度。PyTorch 实际上是在计算 **Vector-Jacobian Product (VJP)**：
@@ -201,13 +210,23 @@ $x \in \mathbb{R}^2,\quad y \in \mathbb{R}$
 #### Forward（定义计算图）
 
 $$
-\begin{aligned}
-h_1 &= W_1 x + b_1 \\
-h_2 &= \text{ReLU}(h_1) \\
-h_3 &= W_2 h_2 + b_2 \\
-\hat y &= W_3 h_3 + b_3 \\
-L &= (\hat y - y)^2
-\end{aligned}
+h_1 = W_1 x + b_1
+$$
+
+$$
+h_2 = \mathrm{ReLU}(h_1)
+$$
+
+$$
+h_3 = W_2 h_2 + b_2
+$$
+
+$$
+\hat{y} = W_3 h_3 + b_3
+$$
+
+$$
+L = (\hat{y} - y)^2
 $$
 
 **到这里为止，只是在定义函数 $L(\theta)$**，还没有任何“训练”发生。
@@ -335,7 +354,7 @@ $$
 #### Step 3：ReLU（这是第一个“非线性关卡”）
 
 $$
-h_2 = \text{ReLU}(h_1)
+h_2 = \mathrm{ReLU}(h_1)
 $$
 
 ReLU 的导数是：

@@ -70,12 +70,16 @@ $$
 
 ### 3.4 本项目中的梯度流模拟公式
 脚本 `simulate_gradient_flow()` 使用可解释性近似：
-$$
-g_k^{\text{RNN}} = (\alpha)^k, \quad \alpha = \mathrm{rnn_decay}
-$$
+记 $\alpha = \texttt{rnn\_decay}$，则：
 
 $$
-g_k^{\text{LSTM}} = (\beta)^k, \quad \beta = \mathrm{lstm_forget}
+g_k^{\mathrm{RNN}} = \alpha^k
+$$
+
+记 $\beta = \texttt{lstm\_forget}$，则：
+
+$$
+g_k^{\mathrm{LSTM}} = \beta^k
 $$
 注意这是机制模拟，不是训练反向传播中实时记录的真实梯度张量。
 
@@ -85,7 +89,7 @@ $$
 | 门控与状态更新 | $f_t, i_t, \tilde{c}_t, c_t, o_t, h_t$ | `LSTMCell.forward()` |
 | 序列前向 | $h_1\ldots h_T, c_1\ldots c_T$ | `LSTM.forward()` |
 | Vanilla RNN 对照 | $h_t = \tanh(W[x_t;h_{t-1}] + b)$ | `VanillaRNNCell.forward()` |
-| 梯度衰减模拟 | $g_k^{\text{RNN}}, g_k^{\text{LSTM}}$ | `simulate_gradient_flow()` |
+| 梯度衰减模拟 | $g_k^{\mathrm{RNN}}, g_k^{\mathrm{LSTM}}$ | `simulate_gradient_flow()` |
 | 可视化统计 | 门均值、状态方差、末端梯度 | `visualize_*` + `results/*.json` |
 
 ## 5. 图像解读 (Figure Walkthrough)
